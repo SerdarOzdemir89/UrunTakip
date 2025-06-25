@@ -189,32 +189,28 @@ def index():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     try:
-        urunler = Urun.query.order_by(Urun.gonderim_tarihi.desc()).all()
-        # Filtre parametrelerini tekrar ekle
         isletme = request.args.get('isletme', '')
         model_no = request.args.get('model_no', '')
         jira_no = request.args.get('jira_no', '')
         lab = request.args.get('lab', '')
         durum = request.args.get('durum', '')
 
-        filtre_var_mi = any([isletme, model_no, jira_no, lab, durum])
-        if not filtre_var_mi or (durum == '') or (durum == 'Tümü'):
-            # Tümü veya hiç filtre yoksa, hurda hariç tüm ürünler
-            urunler = [u for u in Urun.query.order_by(Urun.gonderim_tarihi.desc()).all() if u.durum != 'Hurda']
-        else:
-            if durum == 'Hurda':
-                urunler = [u for u in urunler if u.durum == 'Hurda']
-            else:
-                if isletme:
-                    urunler = [u for u in urunler if (u.isletme and u.isletme.strip().lower() == isletme.strip().lower())]
-                if model_no:
-                    urunler = [u for u in urunler if model_no.lower() in (u.model_no or '').lower()]
-                if jira_no:
-                    urunler = [u for u in urunler if jira_no.lower() in (u.jira_no or '').lower()]
-                if lab:
-                    urunler = [u for u in urunler if u.durum == 'Laboratuvarda' and lab.strip() in [l.strip() for l in (u.laboratuvarlar or '').split(',')]]
-                if durum:
-                    urunler = [u for u in urunler if u.durum == durum]
+        filtered_urunler = []
+        for u in Urun.query.order_by(Urun.gonderim_tarihi.desc()).all():
+            if isletme and (not u.isletme or u.isletme.strip().lower() != isletme.strip().lower()):
+                continue
+            if model_no and model_no.lower() not in (u.model_no or '').lower():
+                continue
+            if jira_no and jira_no.lower() not in (u.jira_no or '').lower():
+                continue
+            if lab and not (u.durum == 'Laboratuvarda' and any(lab.strip().lower() == l.strip().lower() for l in (u.laboratuvarlar or '').split(','))):
+                continue
+            if durum and u.durum != durum:
+                continue
+            if not durum and u.durum == 'Hurda':
+                continue
+            filtered_urunler.append(u)
+        urunler = filtered_urunler
         app.logger.info(f'Ana ekranda listelenecek ürün sayısı: {len(urunler)}')
         for u in urunler[:5]:
             app.logger.info(f'Ürün: model_no={u.model_no}, durum={u.durum}, isletme={u.isletme}')

@@ -657,7 +657,7 @@
                                         {% if lab_durum.durum == 'Hurda' %}bg-danger text-white
                                         {% elif lab_durum.durum == 'Transfer Edildi' %}bg-secondary text-white
                                         {% elif lab_durum.durum == 'Laboratuvarda' %}bg-info text-white
-                                        {% elif lab_durum.durum == 'Bekleme Alanında' %}bg-warning text-dark
+                                        {% elif lab_durum.durum in ['Bekleme Alanı', 'Bekleme Alanında'] %}bg-warning text-dark
                                         {% elif lab_durum.durum == 'Yolda' %}bg-secondary text-white
                                         {% else %}bg-light text-dark
                                         {% endif %}">
@@ -679,9 +679,6 @@
                         <hr>
                         <div class="d-flex flex-column align-items-center">
                             <div class="d-flex flex-wrap justify-content-center gap-2 mt-2">
-                                <a href="{{ url_for('urun_duzenle', urun_id=urun.id) }}" class="btn btn-sm btn-outline-primary px-3 py-2">
-                                    <i class="fas fa-edit me-1"></i>Düzenle
-                                </a>
                                 {% if urun.durum != 'Bekleme Alanında' and session.get('user_id') %}
                                 <form action="{{ url_for('bekleme_alani_yap', urun_id=urun.id) }}" method="post" style="display:inline-block;">
                                     <button type="submit" class="btn btn-sm btn-warning px-3 py-2">

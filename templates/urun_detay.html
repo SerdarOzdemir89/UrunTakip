@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ürün Detayı - Test & Onay Ürün Takip Sistemi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background-color: #0d6efd;
+            color: white;
+            border-radius: 10px 10px 0 0;
+        }
+        .product-image {
+            max-width: 100%;
+            height: 300px;
+            object-fit: contain;
+            border-radius: 10px;
+            background-color: #f8f9fa;
+            padding: 15px;
+            margin: 0 auto;
+            display: block;
+        }
+        .product-image-container {
+            text-align: center;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .status-badge {
+            font-size: 0.9rem;
+            padding: 8px 12px;
+            border-radius: 20px;
+        }
+        .lab-status {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+        .lab-status i {
+            margin-right: 8px;
+        }
+        .lab-status.yolda {
+            background-color: #ffd700;
+            color: #000;
+        }
+        .lab-status.laboratuvarda {
+            background-color: #98fb98;
+            color: #000;
+        }
+        .lab-status.hurda {
+            background-color: #ff6b6b;
+            color: #fff;
+        }
+        .btn-action {
+            margin: 5px;
+        }
+        .modal-header {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .modal-header .btn-close {
+            color: white;
+        }
+        .navbar-logo {
+            height: 45px;
+            width: 45px;
+            margin-right: 12px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='images/owl-logo.png') }}" alt="Owl Logo" class="navbar-logo">
+                Test & Onay Ürün Takip Sistemi
+            </a>
+            <div class="d-flex">
+                <a href="{{ url_for('index') }}" class="btn btn-outline-light">Ana Sayfa</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            <!-- Ürün Bilgileri -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Ürün Bilgileri</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if urun.gorsel_path %}
+                        <div class="product-image-container">
+                            <img src="{{ url_for('static', filename=urun.gorsel_path.replace('static/', '')) }}" 
+                                 class="product-image" 
+                                 alt="{{ urun.model_no }}"
+                                 onerror="this.src='{{ url_for('static', filename='images/owl-logo.png') }}'">
+                        </div>
+                        {% else %}
+                        <div class="product-image-container">
+                            <img src="{{ url_for('static', filename='images/owl-logo.png') }}" 
+                                 class="product-image" 
+                                 alt="Varsayılan Logo">
+                        </div>
+                        {% endif %}
+                        <div class="mb-3">
+                            <h6><i class="fas fa-box me-2"></i>Stok Numarası:</h6>
+                            <p class="lead">{{ urun.model_no }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6><i class="fas fa-barcode me-2"></i>Seri No:</h6>
+                            <p class="lead">{{ urun.seri_no }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6><i class="fas fa-tag me-2"></i>Jira No:</h6>
+                            <p class="lead"><a href="https://digiport.arcelik.com/servicedesk/customer/portal/33/{{ urun.jira_no }}" target="_blank">{{ urun.jira_no }}</a></p>
+                        </div>
+                        <div class="mb-3">
+                            <h6><i class="fas fa-info-circle me-2"></i>Durum:</h6>
+                            <span class="badge {% if urun.durum == 'Hurda' %}bg-danger{% elif urun.durum == 'Laboratuvarda' %}bg-success{% else %}bg-warning{% endif %} status-badge">
+                                {{ urun.durum }}
+                            </span>
+                        </div>
+                        <div class="mb-3">
+                            <h6><i class="fas fa-calendar me-2"></i>Gönderim Tarihi:</h6>
+                            <p class="lead">{{ urun.gonderim_tarihi.strftime('%d.%m.%Y %H:%M') }}</p>
+                        </div>
+                        {% if urun.teslim_alma_tarihi %}
+                        <div class="mb-3">
+                            <h6><i class="fas fa-calendar-check me-2"></i>Teslim Alma Tarihi:</h6>
+                            <p class="lead">{{ urun.teslim_alma_tarihi.strftime('%d.%m.%Y %H:%M') }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Laboratuvar Durumları -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-flask me-2"></i>Laboratuvar Durumları</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for lab_durum in urun.laboratuvar_durumlari %}
+                        <div class="lab-status {{ lab_durum.durum.lower() }}">
+                            {% if lab_durum.laboratuvar == 'Gerilim Performans' %}
+                                <i class="fas fa-bolt"></i>
+                            {% elif lab_durum.laboratuvar == 'Derating' %}
+                                <i class="fas fa-temperature-high"></i>
+                            {% elif lab_durum.laboratuvar == 'İklimlendirme ve Titreşim' %}
+                                <i class="fas fa-wind"></i>
+                            {% elif lab_durum.laboratuvar == 'EMC' %}
+                                <i class="fas fa-broadcast-tower"></i>
+                            {% elif lab_durum.laboratuvar == 'Safety' %}
+                                <i class="fas fa-shield-alt"></i>
+                            {% elif lab_durum.laboratuvar == 'IPC' %}
+                                <i class="fas fa-microchip"></i>
+                            {% elif lab_durum.laboratuvar == 'Optik Performans' %}
+                                <i class="fas fa-lightbulb"></i>
+                            {% elif lab_durum.laboratuvar == 'Dokunmatik Performans' %}
+                                <i class="fas fa-hand-pointer"></i>
+                            {% else %}
+                                <i class="fas fa-flask"></i>
+                            {% endif %}
+                            <strong>{{ lab_durum.laboratuvar }}:</strong> {{ lab_durum.durum }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Butonlar -->
+                <div class="mt-3 d-flex flex-wrap justify-content-end">
+                    <a href="#urun_gecmisi_bolumu" class="btn btn-info btn-action me-2 mb-2">
+                        <i class="fas fa-history me-2"></i>Geçmiş
+                    </a>
+                    {% if urun.durum == 'Laboratuvarda' %}
+                    <button type="button" class="btn btn-danger btn-action me-2 mb-2" data-bs-toggle="modal" data-bs-target="#hurdaModal">
+                        <i class="fas fa-trash me-2"></i>Hurda'ya Ayır
+                    </button>
+                    {% endif %}
+                    {% if session.get('role') == 'admin' %}
+                    <button type="button" class="btn btn-primary btn-action me-2 mb-2" data-bs-toggle="modal" data-bs-target="#urunDuzenleModal">
+                        <i class="fas fa-edit me-2"></i>Düzenle
+                    </button>
+                    <button type="button" class="btn btn-danger btn-action me-2 mb-2" data-bs-toggle="modal" data-bs-target="#urunSilModal">
+                        <i class="fas fa-trash-alt me-2"></i>Sil
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Hurda Modal -->
+            <div class="modal fade" id="hurdaModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title"><i class="fas fa-trash me-2"></i>Hurda'ya Ayır</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form method="POST" action="{{ url_for('hurda_et', urun_id=urun.id) }}">
+                                <div class="mb-3">
+                                    <label for="hurda_aciklama" class="form-label">Hurda Açıklaması</label>
+                                    <textarea class="form-control" id="hurda_aciklama" name="hurda_aciklama" rows="3" required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-danger">Onayla</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ürün Geçmişi -->
+            <div class="col-md-12 mt-4" id="urun_gecmisi_bolumu">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0"><i class="fas fa-history me-2"></i>Ürün Geçmişi</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover table-bordered" id="urunLogTable">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>Tarih ve Saat</th>
+                                        <th>Kullanıcı Adı</th>
+                                        <th>Eylem</th>
+                                        <th>Detaylar</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in urun_log_kayitlari %}
+                                    <tr>
+                                        <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                        <td>{{ log.username }}</td>
+                                        <td>{{ log.action }}</td>
+                                        <td>
+                                            {% if log.details %}
+                                                <pre>{{ log.details }}</pre>
+                                            {% else %}
+                                                Yok
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Düzenleme Modal -->
+    <div class="modal fade" id="urunDuzenleModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Ürün Düzenle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" action="{{ url_for('urun_duzenle', urun_id=urun.id) }}" enctype="multipart/form-data">
+                        {% if session.get('role') == 'admin' %}
+                        <div class="mb-3">
+                            <label class="form-label">İşletme</label>
+                            <select class="form-select" name="isletme" required>
+                                <option value="Ankara Bulaşık Makinesi İşletmesi" {% if urun.isletme == 'Ankara Bulaşık Makinesi İşletmesi' %}selected{% endif %}>Ankara Bulaşık Makinesi İşletmesi</option>
+                                <option value="Manisa Çamaşır Makinesi İşletmesi" {% if urun.isletme == 'Manisa Çamaşır Makinesi İşletmesi' %}selected{% endif %}>Manisa Çamaşır Makinesi İşletmesi</option>
+                                <option value="Eskişehir Buzdolabı İşletmesi" {% if urun.isletme == 'Eskişehir Buzdolabı İşletmesi' %}selected{% endif %}>Eskişehir Buzdolabı İşletmesi</option>
+                                <option value="Ankara Buzdolabı İşletmesi" {% if urun.isletme == 'Ankara Buzdolabı İşletmesi' %}selected{% endif %}>Ankara Buzdolabı İşletmesi</option>
+                                <option value="Bolu Pişirici Cihazlar İşletmesi" {% if urun.isletme == 'Bolu Pişirici Cihazlar İşletmesi' %}selected{% endif %}>Bolu Pişirici Cihazlar İşletmesi</option>
+                                <option value="Beko Wuxi R&D" {% if urun.isletme == 'Beko Wuxi R&D' %}selected{% endif %}>Beko Wuxi R&D</option>
+                                <option value="Temin Ürün Direktörlüğü" {% if urun.isletme == 'Temin Ürün Direktörlüğü' %}selected{% endif %}>Temin Ürün Direktörlüğü</option>
+                                <option value="Merkez Ar&Ge" {% if urun.isletme == 'Merkez Ar&Ge' %}selected{% endif %}>Merkez Ar&Ge</option>
+                            </select>
+                        </div>
+                        {% endif %}
+                        <div class="mb-3">
+                            <label class="form-label">Stok Numarası</label>
+                            <input type="text" class="form-control" name="model_no" value="{{ urun.model_no }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Seri No</label>
+                            <input type="text" class="form-control" name="seri_no" value="{{ urun.seri_no }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Jira No</label>
+                            <input type="text" class="form-control" name="jira_no" value="{{ urun.jira_no }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Durum</label>
+                            <select class="form-select" name="durum" required>
+                                <option value="Yolda" {% if urun.durum == 'Yolda' %}selected{% endif %}>Yolda</option>
+                                <option value="Bekleme Alanında" {% if urun.durum == 'Bekleme Alanında' %}selected{% endif %}>Bekleme Alanında</option>
+                                <option value="Laboratuvarda" {% if urun.durum == 'Laboratuvarda' %}selected{% endif %}>Laboratuvarda</option>
+                                <option value="Hurda" {% if urun.durum == 'Hurda' %}selected{% endif %}>Hurda</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Laboratuvarlar</label>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="Gerilim Performans" {% if 'Gerilim Performans' in urun.get_laboratuvarlar() %}checked{% endif %}>
+                                <label class="form-check-label">Gerilim Performans</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="Derating" {% if 'Derating' in urun.get_laboratuvarlar() %}checked{% endif %}>
+                                <label class="form-check-label">Derating</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="İklimlendirme ve Titreşim" {% if 'İklimlendirme ve Titreşim' in urun.get_laboratuvarlar() %}checked{% endif %}>
+                                <label class="form-check-label">İklimlendirme ve Titreşim</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="EMC" {% if 'EMC' in urun.get_laboratuvarlar() %}checked{% endif %}>
+                                <label class="form-check-label">EMC</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="Safety" {% if 'Safety' in urun.get_laboratuvarlar() %}checked{% endif %}>
+                                <label class="form-check-label">Safety</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="IPC" {% if 'IPC' in urun.get_laboratuvarlar() %}checked{% endif %}>
+                                <label class="form-check-label">IPC</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="Optik Performans" {% if 'Optik Performans' in urun.get_laboratuvarlar() %}checked{% endif %}>
+                                <label class="form-check-label">Optik Performans</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="Dokunmatik Performans" {% if 'Dokunmatik Performans' in urun.get_laboratuvarlar() %}checked{% endif %}>
+                                <label class="form-check-label">Dokunmatik Performans</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ürün Görseli</label>
+                            <input type="file" class="form-control" name="gorsel" accept="image/*">
+                            <small class="form-text text-muted">Yeni bir görsel seçmezseniz mevcut görsel korunacaktır.</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Silme Modal -->
+    <div class="modal fade" id="urunSilModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-trash-alt me-2"></i>Ürün Sil</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Bu ürünü silmek istediğinizden emin misiniz?</p>
+                    <form method="POST" action="{{ url_for('urun_sil', urun_id=urun.id) }}">
+                        <button type="submit" class="btn btn-danger">Evet, Sil</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.3/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            $('#urunLogTable').DataTable({
+                "order": [[0, "desc"]], // İlk sütuna göre (Tarih ve Saat) azalan sırada sırala
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.11.3/i18n/tr.json" // Türkçe dil desteği
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,72 @@
+{% extends "index.html" %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Ürün Düzenle</h5>
+                </div>
+                <form action="{{ url_for('urun_duzenle', urun_id=urun.id) }}" method="post" enctype="multipart/form-data">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="model_no" class="form-label">Stok Numarası</label>
+                            <input type="text" class="form-control" id="model_no" name="model_no" value="{{ urun.model_no }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="seri_no" class="form-label">Seri Numarası</label>
+                            <input type="text" class="form-control" id="seri_no" name="seri_no" value="{{ urun.seri_no }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="jira_no" class="form-label">Jira Numarası</label>
+                            <input type="text" class="form-control" id="jira_no" name="jira_no" value="{{ urun.jira_no }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="isletme" class="form-label">İşletme</label>
+                            {% if session['role'] == 'admin' %}
+                            <select class="form-select" id="isletme" name="isletme" required>
+                                {% for isletme_item in isletmeler %}
+                                <option value="{{ isletme_item }}" {% if urun.isletme == isletme_item %}selected{% endif %}>{{ isletme_item }}</option>
+                                {% endfor %}
+                            </select>
+                            {% else %}
+                            <input type="text" class="form-control" id="isletme" name="isletme" value="{{ urun.isletme }}" readonly>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Atanacak Laboratuvarlar</label>
+                            <div class="row">
+                                {% for lab in laboratuvarlar %}
+                                    {% if lab not in ['Hurda', 'Bekleme Alanında', 'Transfer Edildi', 'Laboratuvarda'] %}
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="laboratuvarlar" value="{{ lab }}" id="lab_{{ loop.index }}" {% if lab in urun.laboratuvarlar.split(',') %}checked{% endif %}>
+                                            <label class="form-check-label" for="lab_{{ loop.index }}">
+                                                {{ lab }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="gorsel" class="form-label">Ürün Görseli</label>
+                            <input class="form-control" type="file" id="gorsel" name="gorsel" accept="image/*">
+                            {% if urun.gorsel_path %}
+                            <div class="mt-2">
+                                <img src="{{ url_for('static', filename=urun.gorsel_path.replace('static/', '')) }}" alt="Ürün Görseli" style="max-height:100px; border-radius:6px;">
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">İptal</a>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

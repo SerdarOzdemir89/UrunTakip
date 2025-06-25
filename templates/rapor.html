@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raporlar - Test & Onay Ürün Takip Sistemi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        .navbar-logo {
+            height: 45px;
+            width: 45px;
+            margin-right: 12px;
+            vertical-align: middle;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.9);
+        }
+        .card-header {
+            background: #0d6efd;
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+        }
+        .table th {
+            background: rgba(13, 110, 253, 0.1);
+        }
+        .table td, .table th {
+            vertical-align: middle;
+        }
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 20px;
+        }
+        .lab-status {
+            display: inline-block;
+            margin: 2px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+        }
+        .lab-status.beklemede {
+            background-color: #ffd700;
+            color: #000;
+        }
+        .lab-status.laboratuvarda {
+            background-color: #28a745;
+            color: #fff;
+        }
+        .lab-status.hurda {
+            background-color: #dc3545;
+            color: #fff;
+        }
+        .lab-icon {
+            margin-right: 4px;
+        }
+        .filter-section {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+            <div class="container">
+                <a class="navbar-brand" href="{{ url_for('index') }}">
+                    <img src="{{ url_for('static', filename='images/owl-logo.png') }}" alt="Owl Logo" class="navbar-logo">
+                    Test & Onay Ürün Takip Sistemi
+                </a>
+                <div class="d-flex align-items-center">
+                    <span class="navbar-text text-white me-3">
+                        <i class="fas fa-user me-2"></i>{{ session['username'] }} ({{ session['role'] }})
+                    </span>
+                    <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-sign-out-alt me-2"></i>Çıkış Yap
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Filtreler -->
+        <div class="filter-section">
+            <h5 class="mb-3"><i class="fas fa-filter me-2"></i>Filtreler</h5>
+            <form method="GET" action="{{ url_for('rapor') }}" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Model No</label>
+                    <input type="text" class="form-control" name="model_no" value="{{ model_no }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Seri No</label>
+                    <input type="text" class="form-control" name="seri_no" value="{{ seri_no }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Jira No</label>
+                    <input type="text" class="form-control" name="jira_no" value="{{ jira_no }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Durum</label>
+                    <select class="form-select" name="durum">
+                        <option value="">Tümü</option>
+                        <option value="Yolda" {% if durum == 'Yolda' %}selected{% endif %}>Yolda</option>
+                        <option value="Bekleme Alanında" {% if durum == 'Bekleme Alanında' %}selected{% endif %}>Bekleme Alanında</option>
+                        <option value="Laboratuvarda" {% if durum == 'Laboratuvarda' %}selected{% endif %}>Laboratuvarda</option>
+                        <option value="Hurda" {% if durum == 'Hurda' %}selected{% endif %}>Hurda</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Laboratuvar</label>
+                    <select class="form-select" name="lab">
+                        <option value="">Tümü</option>
+                        {% for laboratuvar in laboratuvarlar %}
+                        <option value="{{ laboratuvar }}" {% if lab == laboratuvar %}selected{% endif %}>{{ laboratuvar }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% if session['role'] == 'admin' %}
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label class="form-label">İşletme</label>
+                        <select class="form-select" name="isletme">
+                            <option value="">Tümü</option>
+                            <option value="Ankara Bulaşık Makinesi İşletmesi" {% if request.args.get('isletme') == 'Ankara Bulaşık Makinesi İşletmesi' %}selected{% endif %}>Ankara Bulaşık Makinesi İşletmesi</option>
+                            <option value="Manisa Çamaşır Makinesi İşletmesi" {% if request.args.get('isletme') == 'Manisa Çamaşır Makinesi İşletmesi' %}selected{% endif %}>Manisa Çamaşır Makinesi İşletmesi</option>
+                            <option value="Eskişehir Buzdolabı İşletmesi" {% if request.args.get('isletme') == 'Eskişehir Buzdolabı İşletmesi' %}selected{% endif %}>Eskişehir Buzdolabı İşletmesi</option>
+                            <option value="Ankara Buzdolabı İşletmesi" {% if request.args.get('isletme') == 'Ankara Buzdolabı İşletmesi' %}selected{% endif %}>Ankara Buzdolabı İşletmesi</option>
+                            <option value="Bolu Pişirici Cihazlar İşletmesi" {% if request.args.get('isletme') == 'Bolu Pişirici Cihazlar İşletmesi' %}selected{% endif %}>Bolu Pişirici Cihazlar İşletmesi</option>
+                            <option value="Beko Wuxi R&D" {% if request.args.get('isletme') == 'Beko Wuxi R&D' %}selected{% endif %}>Beko Wuxi R&D</option>
+                            <option value="Temin Ürün Direktörlüğü" {% if request.args.get('isletme') == 'Temin Ürün Direktörlüğü' %}selected{% endif %}>Temin Ürün Direktörlüğü</option>
+                            <option value="Merkez Ar&Ge" {% if request.args.get('isletme') == 'Merkez Ar&Ge' %}selected{% endif %}>Merkez Ar&Ge</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-2"></i>Filtrele
+                    </button>
+                    <a href="{{ url_for('rapor') }}" class="btn btn-secondary">
+                        <i class="fas fa-undo me-2"></i>Sıfırla
+                    </a>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+
+        <!-- Rapor Kartı -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Ürün Raporu</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-box me-2"></i>Model No</th>
+                                <th><i class="fas fa-barcode me-2"></i>Seri No</th>
+                                <th><i class="fas fa-tag me-2"></i>Jira No</th>
+                                <th><i class="fas fa-flask me-2"></i>Laboratuvar Durumları</th>
+                                <th><i class="fas fa-info-circle me-2"></i>Durum</th>
+                                <th><i class="fas fa-calendar me-2"></i>Tarih</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for urun in urunler %}
+                            <tr>
+                                <td>{{ urun.model_no }}</td>
+                                <td>{{ urun.seri_no }}</td>
+                                <td><a href="https://digiport.arcelik.com/servicedesk/customer/portal/33/{{ urun.jira_no }}" target="_blank">{{ urun.jira_no }}</a></td>
+                                <td>
+                                    {% for lab_durum in urun.laboratuvar_durumlari %}
+                                    <div class="lab-status {{ lab_durum.durum.lower() }}">
+                                        {% if lab_durum.laboratuvar == 'Gerilim Performans' %}
+                                            <i class="lab-icon fas fa-bolt"></i>
+                                        {% elif lab_durum.laboratuvar == 'Derating' %}
+                                            <i class="lab-icon fas fa-temperature-high"></i>
+                                        {% elif lab_durum.laboratuvar == 'İklimlendirme ve Titreşim' %}
+                                            <i class="lab-icon fas fa-wind"></i>
+                                        {% elif lab_durum.laboratuvar == 'EMC' %}
+                                            <i class="lab-icon fas fa-broadcast-tower"></i>
+                                        {% elif lab_durum.laboratuvar == 'Safety' %}
+                                            <i class="lab-icon fas fa-shield-alt"></i>
+                                        {% elif lab_durum.laboratuvar == 'IPC' %}
+                                            <i class="lab-icon fas fa-microchip"></i>
+                                        {% elif lab_durum.laboratuvar == 'Optik Performans' %}
+                                            <i class="lab-icon fas fa-eye"></i>
+                                        {% elif lab_durum.laboratuvar == 'Dokunmatik Performans' %}
+                                            <i class="lab-icon fas fa-hand-pointer"></i>
+                                        {% else %}
+                                            <i class="lab-icon fas fa-flask"></i>
+                                        {% endif %}
+                                        {{ lab_durum.laboratuvar }}: {{ lab_durum.durum }}
+                                    </div>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    <span class="badge {% if urun.durum == 'Hurda' %}bg-danger{% elif urun.durum == 'Laboratuvarda' %}bg-success{% else %}bg-warning{% endif %} status-badge">
+                                        <i class="fas fa-circle me-1"></i>{{ urun.durum }}
+                                    </span>
+                                </td>
+                                <td>{{ urun.gonderim_tarihi.strftime('%d.%m.%Y %H:%M') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if not urunler %}
+                <div class="text-center py-4">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Sonuç bulunamadı</h5>
+                    <p class="text-muted">Lütfen farklı filtre kriterleri deneyin.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

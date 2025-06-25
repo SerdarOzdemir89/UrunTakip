@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test & Onay Ürün Takip Sistemi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body, .container {
+            font-size: 1rem;
+            background: #f4f8fb;
+        }
+        .filter-section {
+            background: #e3f2fd;
+            border: 2px solid #90caf9;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(33,150,243,0.07);
+            margin-bottom: 24px;
+            padding: 18px 20px 10px 20px;
+        }
+        .filter-section .form-label {
+            font-weight: 600;
+            color: #1976d2;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .filter-section .form-control, .filter-section .form-select {
+            border-radius: 8px;
+            border: 1.5px solid #bbdefb;
+            background: #fafdff;
+        }
+        .filter-section .btn-primary {
+            font-size: 1.1rem;
+            padding: 8px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(33,150,243,0.13);
+        }
+        .card {
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(33,150,243,0.09);
+            border: none;
+            transition: transform 0.18s, box-shadow 0.18s;
+            margin-bottom: 1.5rem;
+        }
+        .card:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 8px 32px rgba(33,150,243,0.16);
+        }
+        .card-img-top {
+            height: 160px;
+            object-fit: contain;
+            background: #f4f6fa;
+            border-radius: 18px 18px 0 0;
+            margin-bottom: 0.5rem;
+        }
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #0d47a1;
+            margin-bottom: 0.4rem;
+        }
+        .card-text {
+            font-size: 1.01rem;
+            color: #263238;
+            margin-bottom: 0.2rem;
+        }
+        .card-footer {
+            background: #f8fafc;
+            border-top: 1.5px solid #e3e6ed;
+            border-radius: 0 0 18px 18px;
+            padding: 0.7rem 1rem 0.7rem 1rem;
+        }
+        .btn {
+            border-radius: 8px;
+            font-size: 0.98rem;
+            font-weight: 600;
+        }
+        .btn-primary, .btn-info, .btn-warning, .btn-danger, .btn-secondary {
+            color: #fff !important;
+        }
+        .btn-info { background: #1976d2; border: none; }
+        .btn-warning { background: #ffa726; border: none; }
+        .btn-danger { background: #e53935; border: none; }
+        .btn-secondary { background: #607d8b; border: none; }
+        .btn-outline-primary { color: #1976d2; border-color: #1976d2; }
+        .btn-outline-primary:hover { background: #1976d2; color: #fff; }
+        .d-flex.gap-2 > * { margin-right: 0.5rem; }
+        @media (max-width: 768px) {
+            .card-img-top { height: 110px; }
+            .card-title { font-size: 1rem; }
+            .filter-section { padding: 10px 6px; }
+            .card-footer .d-flex.flex-wrap { flex-direction: column !important; gap: 0.5rem !important; }
+        }
+        .navbar {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background-color: #1565c0 !important;
+        }
+        .navbar-logo {
+            height: 45px;
+            width: 45px;
+            margin-right: 12px;
+            vertical-align: middle;
+        }
+        .filter-section h5 {
+            color: #495057;
+            font-weight: 500;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 6px;
+            font-size: 1.1rem;
+        }
+        .filter-section .row.g-3 {
+            --bs-gutter-x: 0.5rem;
+            --bs-gutter-y: 0.5rem;
+        }
+        .filter-section .col-md-3, .filter-section .col-12 {
+            margin-bottom: 6px;
+        }
+        .filter-section .btn {
+            padding: 4px 14px;
+            font-size: 0.97rem;
+        }
+        .btn-add-product {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            background: #0d6efd;
+            border: none;
+        }
+        .btn-add-product:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+            background: #0b5ed7;
+        }
+        .btn-report {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            background: #198754;
+            border: none;
+        }
+        .btn-report:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+            background: #157347;
+        }
+        .status-badge, .badge.rounded-pill {
+            font-size: 0.89rem;
+            padding: 5px 13px;
+            border-radius: 16px;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
+        .status-yolda { background-color: #ffe082; color: #795548; }
+        .status-bekleme { background-color: #87ceeb; color: #000; }
+        .status-bekleme-alaninda { background-color: #b3e5fc; color: #01579b; }
+        .status-laboratuvar { background-color: #c8e6c9; color: #256029; }
+        .status-hurda { background-color: #ff8a80; color: #b71c1c; }
+        .product-image, .card-img-top {
+            height: 120px;
+            max-height: 120px;
+            object-fit: contain;
+            background: #f4f6fa;
+            border-radius: 10px 10px 0 0;
+            margin-bottom: 0.3rem;
+        }
+        .table th {
+            background-color: #f8f9fa;
+        }
+        .table-hover tbody tr:hover {
+            background-color: #f5f5f5;
+        }
+        .form-check-label {
+            cursor: pointer;
+        }
+        .form-check-input {
+            cursor: pointer;
+        }
+        /* Laboratory status styles */
+        .lab-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 8px;
+            margin: 4px 0;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+        }
+        
+        .lab-icon {
+            font-size: 1.1em;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .lab-status-badge {
+            font-size: 0.8em;
+            padding: 2px 6px;
+            border-radius: 12px;
+            margin-left: auto;
+        }
+        
+        .lab-status-badge.yolda {
+            background-color: #ffd700;
+            color: #000;
+        }
+        
+        .lab-status-badge.laboratuvarda {
+            background-color: #28a745;
+            color: #fff;
+        }
+        
+        .lab-status-badge.hurda {
+            background-color: #dc3545;
+            color: #fff;
+        }
+        
+        .lab-status-badge.ürün-bekleme-alanında {
+            background-color: #6f42c1 !important;
+            color: #fff !important;
+        }
+        .card-subtitle {
+            font-size: 0.91rem;
+            color: #607d8b;
+            margin-bottom: 0.2rem;
+        }
+        .card-body {
+            padding: 0.7rem 0.8rem 0.5rem 0.8rem;
+        }
+        .btn-outline-danger {
+            border-radius: 8px;
+            font-size: 0.93rem;
+            padding: 4px 14px;
+            border-width: 2px;
+            font-weight: 600;
+        }
+        .btn-outline-danger:hover {
+            background: #ffebee;
+            color: #b71c1c;
+            border-color: #b71c1c;
+        }
+        .list-group-item {
+            font-size: 0.88rem;
+            padding: 0.15rem 0.3rem;
+            border: none;
+            background: #f9f9fb;
+            margin-bottom: 1px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .fw-bold {
+            color: #263238;
+            font-size: 0.91rem;
+            margin-right: 4px;
+            min-width: 110px;
+        }
+        .form-select.form-select-sm {
+            font-size: 0.88rem;
+            padding: 1px 6px;
+            height: 22px;
+            min-height: 22px;
+            border-radius: 5px;
+            width: 110px;
+            margin-left: auto;
+        }
+        .navbar-brand, .navbar-brand *, .navbar-text, .navbar a, .navbar .btn {
+            color: #fff !important;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.18);
+            font-weight: 600;
+        }
+        .laboratuvar-badge {
+            cursor: pointer;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            transition: box-shadow 0.2s, border 0.2s;
+            display: inline-block;
+        }
+        .laboratuvar-badge input[type="checkbox"]:checked + span {
+            box-shadow: 0 0 0 2px #0d6efd, 0 2px 8px rgba(13,110,253,0.15);
+            border: 2px solid #0d6efd;
+            filter: brightness(1.1);
+        }
+        .laboratuvar-badge span {
+            padding: 0.7em 1.2em;
+            font-size: 1em;
+            border-radius: 8px;
+            display: inline-block;
+            border: 2px solid transparent;
+            transition: box-shadow 0.2s, border 0.2s, filter 0.2s;
+        }
+        .laboratuvar-badge:hover span {
+            filter: brightness(1.08);
+            box-shadow: 0 0 0 2px #0d6efd33;
+        }
+        /* Ürün görseli için modern kapsayıcı */
+        .product-image-wrapper {
+            position: relative;
+            border-radius: 18px 18px 0 0;
+            margin: 0 18px 10px 18px;
+            box-shadow: 0 4px 24px rgba(33,150,243,0.13);
+            transition: transform 0.18s, box-shadow 0.18s;
+            background: linear-gradient(135deg, #e3f2fd 0%, #fce4ec 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 150px;
+            overflow: hidden;
+        }
+        .product-image-wrapper.hurda { background: linear-gradient(135deg, #ffdde1 0%, #ee9ca7 100%); }
+        .product-image-wrapper.bekleme { background: linear-gradient(135deg, #b3c6fc 0%, #a1c4fd 100%); }
+        .product-image-wrapper.yolda { background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%); }
+        .product-image-wrapper:hover {
+            transform: scale(1.04);
+            box-shadow: 0 8px 32px rgba(33,150,243,0.22);
+        }
+        .product-image-wrapper .corner-icon {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            font-size: 1.3rem;
+            color: #1976d2;
+            opacity: 0.7;
+        }
+        .product-image-wrapper img {
+            max-height: 110px;
+            max-width: 90%;
+            object-fit: contain;
+            border-radius: 12px;
+            background: transparent;
+            box-shadow: 0 2px 8px rgba(33,150,243,0.07);
+        }
+        .product-image-wrapper .status-badge-overlay {
+            position: absolute;
+            top: 12px;
+            left: 16px;
+            z-index: 2;
+            font-size: 1.05rem;
+            font-weight: 700;
+            padding: 7px 18px;
+            border-radius: 18px;
+            box-shadow: 0 2px 8px rgba(33,150,243,0.13);
+            background: rgba(255,255,255,0.85);
+            letter-spacing: 0.01em;
+            border: 2px solid #fff;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .product-image-wrapper .status-hurda { color: #fff; background: rgba(229,57,53,0.92); border-color: #e53935; }
+        .product-image-wrapper .status-bekleme { color: #fff; background: rgba(25,118,210,0.92); border-color: #1976d2; }
+        .product-image-wrapper .status-yolda { color: #fff; background: rgba(96,125,139,0.92); border-color: #607d8b; }
+        .filter-status-group {
+            display: flex;
+            flex-direction: row;
+            gap: 6px;
+            margin-top: 8px;
+            margin-bottom: 10px;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
+        .filter-status-btn {
+            border-radius: 9px !important;
+            font-weight: 600;
+            padding: 2px 10px !important;
+            font-size: 0.85rem;
+            border-width: 1.5px;
+            transition: background 0.18s, color 0.18s, border 0.18s, box-shadow 0.18s, transform 0.18s;
+            box-shadow: 0 2px 12px rgba(33,150,243,0.10);
+            letter-spacing: 0.01em;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .filter-status-btn.tumu { border-color: #1976d2; color: #1976d2; background: #fff; }
+        .filter-status-btn.tumu.selected, .filter-status-btn.tumu:active { background: #1976d2; color: #fff; }
+        .filter-status-btn.yolda { border-color: #607d8b; color: #607d8b; background: #fff; }
+        .filter-status-btn.yolda.selected, .filter-status-btn.yolda:active { background: #607d8b; color: #fff; }
+        .filter-status-btn.bekleme { border-color: #1976d2; color: #1976d2; background: #fff; }
+        .filter-status-btn.bekleme.selected, .filter-status-btn.bekleme:active { background: #1976d2; color: #fff; }
+        .filter-status-btn.hurda { border-color: #e53935; color: #e53935; background: #fff; }
+        .filter-status-btn.hurda.selected, .filter-status-btn.hurda:active { background: #e53935; color: #fff; }
+        .filter-status-btn.iade { border-color: #ffa726; color: #ffa726; background: #fff; }
+        .filter-status-btn.iade.selected, .filter-status-btn.iade:active { background: #ffa726; color: #fff; }
+        /* Modern filtre kartı */
+        .filter-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(33,150,243,0.06);
+            padding: 12px 14px 8px 14px;
+            margin-bottom: 24px;
+            border: 1px solid #e3e6ed;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .filter-card .form-label {
+            font-size: 0.97rem;
+            color: #263238;
+            font-weight: 500;
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .filter-card .form-control, .filter-card .form-select {
+            border-radius: 8px;
+            border: 1px solid #dbeafe;
+            font-size: 0.93rem;
+            padding: 4px 10px;
+            background: #fafdff;
+            box-shadow: none;
+            height: 32px;
+            min-height: 32px;
+            max-height: 32px;
+        }
+        .filter-card .form-control:focus, .filter-card .form-select:focus {
+            border-color: #90caf9;
+            box-shadow: 0 0 0 1px #90caf9;
+        }
+        .filter-status-group {
+            display: flex;
+            flex-direction: row;
+            gap: 4px;
+            margin-top: 0;
+            margin-bottom: 6px;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
+        .filter-status-btn {
+            border-radius: 7px !important;
+            font-weight: 500;
+            padding: 2px 8px !important;
+            font-size: 0.83rem;
+            border-width: 1.2px;
+            transition: background 0.15s, color 0.15s, border 0.15s;
+            box-shadow: none;
+            letter-spacing: 0.01em;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            background: #fff;
+        }
+        .filter-status-btn.tumu { border-color: #1976d2; color: #1976d2; }
+        .filter-status-btn.tumu.selected, .filter-status-btn.tumu:active { background: #e3f2fd; color: #1976d2; }
+        .filter-status-btn.yolda { border-color: #607d8b; color: #607d8b; }
+        .filter-status-btn.yolda.selected, .filter-status-btn.yolda:active { background: #eceff1; color: #607d8b; }
+        .filter-status-btn.bekleme { border-color: #1976d2; color: #1976d2; }
+        .filter-status-btn.bekleme.selected, .filter-status-btn.bekleme:active { background: #e3f2fd; color: #1976d2; }
+        .filter-status-btn.hurda { border-color: #e53935; color: #e53935; }
+        .filter-status-btn.hurda.selected, .filter-status-btn.hurda:active { background: #ffebee; color: #e53935; }
+        .filter-status-btn.iade { border-color: #ffa726; color: #ffa726; }
+        .filter-status-btn.iade.selected, .filter-status-btn.iade:active { background: #fff8e1; color: #ffa726; }
+        .filter-status-btn i { font-size: 0.95em; margin-right: 2px; }
+        @media (max-width: 768px) {
+            .filter-card { padding: 7px 2px 6px 2px; }
+            .filter-status-group { flex-wrap: wrap; justify-content: flex-start; }
+        }
+        .lab-badge, .lab-badge-flex {
+            font-size: 0.77em;
+            padding: 3px 7px;
+            border-radius: 8px;
+            min-width: 80px;
+            max-width: 110px;
+            white-space: nowrap;
+            text-align: center;
+            display: inline-block;
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .lab-row-flex { display: flex; align-items: center; gap: 8px; min-height: 32px; }
+        .lab-select-flex {
+            min-width: 80px;
+            max-width: 110px;
+            font-size: 0.85em;
+            height: 24px;
+            padding: 2px 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        @media (max-width: 600px) {
+          .lab-row-flex { flex-direction: column; align-items: stretch; gap: 4px; }
+          .lab-badge, .lab-badge-flex, .lab-select-flex { width: 100%; min-width: 0; max-width: 100%; margin-bottom: 2px; }
+        }
+        .card-info-sm { font-size: 0.97rem; margin-bottom: 0.1rem; line-height: 1.2; }
+    </style>
+</head>
+<body>
+    <!-- Flash mesajları -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show mt-3" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4" style="background-color: #1565c0 !important; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='images/owl-logo.png') }}" alt="Owl Logo" class="navbar-logo me-2" style="background:none; box-shadow:none; border:none;">
+                <span style="font-size:1.7rem; font-weight:700; color:#fff; text-shadow:0 2px 8px #1976d2;">Test & Onay Ürün Takip Sistemi</span>
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="navbar-text text-white me-3">
+                    <i class="fas fa-user me-2"></i>{{ session['username'] }} ({{ session['role'] }})
+                </span>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-sign-out-alt me-2"></i>Çıkış Yap
+                </a>
+            </div>
+        </div>
+    </nav>
+    <div class="container" style="background:transparent !important; box-shadow:none;">
+        <!-- Filtreler -->
+        <div class="filter-card">
+            <form action="{{ url_for('index') }}" method="get">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-3 col-12 mb-2 mb-md-0">
+                        <label class="form-label w-100"><i class="fas fa-barcode" style="font-size:1em;"></i> Stok Numarası</label>
+                        <input type="text" class="form-control form-control-sm w-100" name="model_no" value="{{ request.args.get('model_no', '') }}">
+                    </div>
+                    <div class="col-md-3 col-12 mb-2 mb-md-0">
+                        <label class="form-label w-100"><i class="fas fa-ticket-alt" style="font-size:1em;"></i> Jira Talep Numarası</label>
+                        <input type="text" class="form-control form-control-sm w-100" name="jira_no" value="{{ request.args.get('jira_no', '') }}">
+                    </div>
+                    <div class="col-md-3 col-12 mb-2 mb-md-0">
+                        <label class="form-label w-100"><i class="fas fa-industry" style="font-size:1em;"></i> İşletme</label>
+                        <select class="form-control form-control-sm w-100" name="isletme">
+                            <option value="">Tümü</option>
+                            {% for isletme_item in isletmeler %}
+                            <option value="{{ isletme_item }}" {% if request.args.get('isletme') == isletme_item %}selected{% endif %}>{{ isletme_item }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-12 mb-2 mb-md-0">
+                        <label class="form-label w-100"><i class="fas fa-flask" style="font-size:1em;"></i> Laboratuvar</label>
+                        <select class="form-control form-control-sm w-100" name="lab">
+                            <option value="">Tümü</option>
+                            <option value="Gerilim Performans" {% if request.args.get('lab') == 'Gerilim Performans' %}selected{% endif %}>Gerilim Performans</option>
+                            <option value="Derating" {% if request.args.get('lab') == 'Derating' %}selected{% endif %}>Derating</option>
+                            <option value="İklimlendirme ve Titreşim" {% if request.args.get('lab') == 'İklimlendirme ve Titreşim' %}selected{% endif %}>İklimlendirme ve Titreşim</option>
+                            <option value="EMC" {% if request.args.get('lab') == 'EMC' %}selected{% endif %}>EMC</option>
+                            <option value="IPC" {% if request.args.get('lab') == 'IPC' %}selected{% endif %}>IPC</option>
+                            <option value="Safety" {% if request.args.get('lab') == 'Safety' %}selected{% endif %}>Safety</option>
+                            <option value="Standby" {% if request.args.get('lab') == 'Standby' %}selected{% endif %}>Standby</option>
+                            <option value="Optik Performans" {% if request.args.get('lab') == 'Optik Performans' %}selected{% endif %}>Optik Performans</option>
+                            <option value="Dokunmatik Performans" {% if request.args.get('lab') == 'Dokunmatik Performans' %}selected{% endif %}>Dokunmatik Performans</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row g-2 align-items-center mt-1">
+                    <div class="col-12 d-flex justify-content-center">
+                        <div class="filter-status-group">
+                            <button type="submit" name="durum" value="" class="filter-status-btn tumu {% if not request.args.get('durum') %}selected{% endif %}"><i class="fas fa-list"></i> Tümü</button>
+                            <button type="submit" name="durum" value="Yolda" class="filter-status-btn yolda {% if request.args.get('durum') == 'Yolda' %}selected{% endif %}"><i class="fas fa-truck"></i> Yolda</button>
+                            <button type="submit" name="durum" value="Bekleme Alanında" class="filter-status-btn bekleme {% if request.args.get('durum') == 'Bekleme Alanında' %}selected{% endif %}"><i class="fas fa-warehouse"></i> Bekleme Alanında</button>
+                            <button type="submit" name="durum" value="Ürün Bekleniyor" class="filter-status-btn bekleme {% if request.args.get('durum') == 'Ürün Bekleniyor' %}selected{% endif %}"><i class="fas fa-hourglass-half"></i> Ürün Bekleniyor</button>
+                            <button type="submit" name="durum" value="Hurda" class="filter-status-btn hurda {% if request.args.get('durum') == 'Hurda' %}selected{% endif %}"><i class="fas fa-trash-alt"></i> Hurda</button>
+                            <button type="submit" name="durum" value="Geri İade" class="filter-status-btn iade {% if request.args.get('durum') == 'Geri İade' %}selected{% endif %}"><i class="fas fa-undo"></i> Geri İade</button>
+                            <button type="submit" name="durum" value="Laboratuvarda" class="filter-status-btn bekleme {% if request.args.get('durum') == 'Laboratuvarda' %}selected{% endif %}"><i class="fas fa-flask"></i> Laboratuvarda</button>
+                        </div>
+                    </div>
+                    <div class="col-12 text-end mt-2 mt-md-0">
+                        <button type="submit" class="btn btn-primary btn-sm shadow w-100 w-md-auto px-4">
+                            <i class="fas fa-search me-2"></i>Filtrele
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Yeni Ürün Ekleme ve Rapor Butonları -->
+        <div class="text-center mb-4">
+            <div class="d-flex justify-content-center gap-3">
+                <button type="button" class="btn btn-primary btn-lg btn-add-product" data-bs-toggle="modal" data-bs-target="#urunEkleModal">
+                    <i class="fas fa-plus-circle me-2"></i>Yeni Ürün Ekle
+                </button>
+            </div>
+        </div>
+
+        <!-- Ürün Kartları -->
+        <div class="row">
+            {% for urun in urunler %}
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm">
+                    <a href="{{ url_for('urun_detay', urun_id=urun.id) }}" style="text-decoration:none;">
+                        <div class="product-image-wrapper {% if urun.durum == 'Hurda' %}hurda{% elif urun.durum == 'Bekleme Alanında' %}bekleme{% elif urun.durum == 'Yolda' %}yolda{% endif %}">
+                            {% set genel_durum = 'Durum Yok' %}
+                            {% for lab_durum in urun.laboratuvar_durumlari %}
+                                {% if lab_durum.durum == 'Hurda' %}
+                                    {% set genel_durum = 'Hurda' %}
+                                {% elif lab_durum.durum == 'Transfer Edildi' %}
+                                    {% set genel_durum = 'Transfer Edildi' %}
+                                {% elif lab_durum.durum == 'Laboratuvarda' %}
+                                    {% set genel_durum = 'Laboratuvarda' %}
+                                {% elif lab_durum.durum == 'Bekleme Alanında' and genel_durum not in ['Laboratuvarda', 'Transfer Edildi', 'Hurda'] %}
+                                    {% set genel_durum = 'Bekleme Alanında' %}
+                                {% endif %}
+                            {% endfor %}
+                            <div class="text-center mt-3">
+                                {% if genel_durum == 'Hurda' %}
+                                    <span class="badge bg-danger fs-5 px-4 py-2">Hurda</span>
+                                {% elif genel_durum == 'Transfer Edildi' %}
+                                    <span class="badge bg-secondary fs-5 px-4 py-2">Transfer Edildi</span>
+                                {% elif genel_durum == 'Laboratuvarda' %}
+                                    <span class="badge bg-info text-white fs-5 px-4 py-2">Laboratuvarda</span>
+                                {% elif genel_durum == 'Bekleme Alanında' %}
+                                    <span class="badge bg-warning text-dark fs-5 px-4 py-2">Bekleme Alanında</span>
+                                {% endif %}
+                            </div>
+                            <img src="{{ url_for('static', filename=urun.gorsel_path.replace('static/', '')) if urun.gorsel_path else url_for('static', filename='images/owl-logo.png') }}"
+                                alt="Ürün Görseli"
+                                onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/owl-logo.png') }}';">
+                            <span class="corner-icon"><i class="fas fa-image"></i></span>
+                        </div>
+                    </a>
+                    <div class="card-body text-center pt-2 pb-1">
+                        <h6 class="card-title mb-2" style="font-size:1.08rem; font-weight:700; color:#0d47a1;">{{ urun.model_no if urun.model_no else 'Belirtilmemiş' }}</h6>
+                        <div class="card-info-sm mb-1"><span class="fw-bold">İşletme:</span> {{ urun.isletme if urun.isletme else 'Belirtilmemiş' }}</div>
+                        <div class="card-info-sm"><span class="fw-bold">Jira No:</span> 
+                            {% if urun.jira_no %}
+                                <a href="https://digiport.arcelik.com/servicedesk/customer/portal/33/{{ urun.jira_no }}" target="_blank">{{ urun.jira_no }}</a>
+                            {% else %}
+                                Belirtilmemiş
+                            {% endif %}
+                        </div>
+                        <div class="card-info-sm mt-1">
+                            <span class="fw-bold">Durum:</span>
+                            {% if urun.durum == 'Laboratuvarda' %}
+                                Ürün Laboratuvarda
+                            {% elif urun.durum == 'Yolda' %}
+                                Yolda
+                            {% elif urun.durum == 'Hurda' %}
+                                Hurda
+                            {% elif urun.durum == 'Bekleme Alanında' %}
+                                Bekleme Alanında
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-top">
+                        <h6 class="card-subtitle mb-2 text-muted"><i class="fas fa-flask me-1"></i> Atanan Laboratuvarlar:</h6>
+                        <div class="list-group list-group-flush">
+                            {% for lab_durum in urun.laboratuvar_durumlari %}
+                                <div class="list-group-item lab-row-flex p-2">
+                                    <span class="fw-bold">{{ lab_durum.laboratuvar }}</span>
+                                    <span class="lab-badge lab-badge-flex ms-2
+                                        {% if lab_durum.durum == 'Hurda' %}bg-danger text-white
+                                        {% elif lab_durum.durum == 'Transfer Edildi' %}bg-secondary text-white
+                                        {% elif lab_durum.durum == 'Laboratuvarda' %}bg-info text-white
+                                        {% elif lab_durum.durum == 'Bekleme Alanında' %}bg-warning text-dark
+                                        {% elif lab_durum.durum == 'Yolda' %}bg-secondary text-white
+                                        {% else %}bg-light text-dark
+                                        {% endif %}">
+                                        {{ 'Lab.' if lab_durum.durum == 'Laboratuvarda' else (lab_durum.durum[:10] ~ ('...' if lab_durum.durum|length > 10 else '')) if lab_durum.durum else 'Durum Yok' }}
+                                    </span>
+                                    <select class="form-select form-select-sm lab-select-flex ms-2" onchange="updateLaboratuvarDurum({{ lab_durum.id }}, this.value)">
+                                        <option value="Hurda" {% if lab_durum.durum == 'Hurda' %}selected{% endif %}>Hurda</option>
+                                        <option value="Bekleme Alanı" {% if lab_durum.durum == 'Bekleme Alanı' or lab_durum.durum == 'Bekleme Alanında' %}selected{% endif %}>Bekleme Alanı</option>
+                                        <option value="Laboratuvarda" {% if lab_durum.durum == 'Laboratuvarda' %}selected{% endif %}>Lab.</option>
+                                        <option value="Transfer Edildi" {% if lab_durum.durum == 'Transfer Edildi' %}selected{% endif %}>Transfer...</option>
+                                        <option value="Yolda" {% if lab_durum.durum == 'Yolda' %}selected{% endif %}>Yolda</option>
+                                        <option value="Ürün Bekleniyor" {% if lab_durum.durum == 'Ürün Bekleniyor' %}selected{% endif %}>Bekleniyor</option>
+                                    </select>
+                                </div>
+                            {% else %}
+                                <p class="text-muted">Laboratuvar atanmamış.</p>
+                            {% endfor %}
+                        </div>
+                        <hr>
+                        <div class="d-flex flex-column align-items-center">
+                            <div class="d-flex flex-wrap justify-content-center gap-2 mt-2">
+                                <a href="{{ url_for('urun_duzenle', urun_id=urun.id) }}" class="btn btn-sm btn-outline-primary px-3 py-2">
+                                    <i class="fas fa-edit me-1"></i>Düzenle
+                                </a>
+                                {% if urun.durum != 'Bekleme Alanında' and session.get('user_id') %}
+                                <form action="{{ url_for('bekleme_alani_yap', urun_id=urun.id) }}" method="post" style="display:inline-block;">
+                                    <button type="submit" class="btn btn-sm btn-warning px-3 py-2">
+                                        <i class="fas fa-warehouse me-1"></i>Bekleme Alanına Taşı
+                                    </button>
+                                </form>
+                                {% endif %}
+                                {% if urun.durum == 'Laboratuvarda' or urun.durum == 'Bekleme Alanında' %}
+                                <button type="button" class="btn btn-sm btn-outline-danger px-3 py-2" data-bs-toggle="modal" data-bs-target="#hurdaModal{{ urun.id }}">
+                                    <i class="fas fa-trash-alt me-1"></i>Hurda Et
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Hurda Modal -->
+            {% if urun.durum == 'Laboratuvarda' or urun.durum == 'Bekleme Alanında' %}
+            <div class="modal fade" id="hurdaModal{{ urun.id }}" tabindex="-1" aria-labelledby="hurdaModalLabel{{ urun.id }}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="hurdaModalLabel{{ urun.id }}">Ürünü Hurda Olarak İşaretle</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form action="{{ url_for('hurda_et', urun_id=urun.id) }}" method="post">
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="hurda_aciklama{{ urun.id }}" class="form-label">Hurda Açıklaması</label>
+                                    <textarea class="form-control" id="hurda_aciklama{{ urun.id }}" name="hurda_aciklama" rows="3" required></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                                <button type="submit" class="btn btn-danger">Hurda Yap</button>
+                            </div>
+                        </form>
+                        <form action="{{ url_for('bekleme_alani_yap', urun_id=urun.id) }}" method="post" style="display:inline-block;">
+                            <button type="submit" class="btn btn-warning w-100 mt-2">Bekleme Alanı Yap</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="col-12">
+                <div class="alert alert-info text-center" role="alert">
+                    Gösterilecek ürün bulunamadı.
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Ürün Ekle Modal -->
+    <div class="modal fade" id="urunEkleModal" tabindex="-1" aria-labelledby="urunEkleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="urunEkleModalLabel">Yeni Ürün Ekle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ url_for('urun_ekle') }}" method="post" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="isletme" class="form-label">İşletme</label>
+                            <select class="form-select" id="isletme" name="isletme" required>
+                                <option value="" disabled selected>İşletme seçiniz</option>
+                                <option value="Pişirici Cihazlar İşletmesi">Pişirici Cihazlar İşletmesi</option>
+                                <option value="Buzdolabı İşletmesi">Buzdolabı İşletmesi</option>
+                                <option value="Temin Ürün Direktörlüğü">Temin Ürün Direktörlüğü</option>
+                                <option value="Bulaşık Makinesi İşletmesi">Bulaşık Makinesi İşletmesi</option>
+                                <option value="Kurutucu İşletmesi">Kurutucu İşletmesi</option>
+                                <option value="Küçük Ev Aletleri İşletmesi">Küçük Ev Aletleri İşletmesi</option>
+                                <option value="Beko Wuxi R&D">Beko Wuxi R&D</option>
+                                <option value="Hitachi">Hitachi</option>
+                                <option value="Dawlance">Dawlance</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="model_no" class="form-label">Stok Numarası</label>
+                            <input type="text" class="form-control" id="model_no" name="model_no" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="seri_no" class="form-label">Seri Numarası</label>
+                            <input type="text" class="form-control" id="seri_no" name="seri_no" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="jira_no" class="form-label">Jira Numarası</label>
+                            <input type="text" class="form-control" id="jira_no" name="jira_no" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="aciklama" class="form-label">Açıklama</label>
+                            <textarea class="form-control" id="aciklama" name="aciklama" rows="2" placeholder="Açıklama yazınız..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Atanacak Laboratuvarlar</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                <label class="laboratuvar-badge">
+                                    <input type="checkbox" name="laboratuvarlar" value="EMC" id="lab-emc" class="d-none">
+                                    <span class="badge bg-primary">EMC</span>
+                                </label>
+                                <label class="laboratuvar-badge">
+                                    <input type="checkbox" name="laboratuvarlar" value="İklimlendirme ve Titreşim" id="lab-iklim" class="d-none">
+                                    <span class="badge bg-info text-dark">İklimlendirme ve Titreşim</span>
+                                </label>
+                                <label class="laboratuvar-badge">
+                                    <input type="checkbox" name="laboratuvarlar" value="Dokunmatik Performans" id="lab-dokunmatik" class="d-none">
+                                    <span class="badge bg-success">Dokunmatik Performans</span>
+                                </label>
+                                <label class="laboratuvar-badge">
+                                    <input type="checkbox" name="laboratuvarlar" value="Optik Performans" id="lab-optik" class="d-none">
+                                    <span class="badge bg-warning text-dark">Optik Performans</span>
+                                </label>
+                                <label class="laboratuvar-badge">
+                                    <input type="checkbox" name="laboratuvarlar" value="Komponent" id="lab-komponent" class="d-none">
+                                    <span class="badge bg-secondary">Komponent</span>
+                                </label>
+                                <label class="laboratuvar-badge">
+                                    <input type="checkbox" name="laboratuvarlar" value="Gerilim Performans" id="lab-gerilim" class="d-none">
+                                    <span class="badge bg-danger">Gerilim Performans</span>
+                                </label>
+                                <label class="laboratuvar-badge">
+                                    <input type="checkbox" name="laboratuvarlar" value="Derating" id="lab-derating" class="d-none">
+                                    <span class="badge bg-dark">Derating</span>
+                                </label>
+                                <label class="laboratuvar-badge">
+                                    <input type="checkbox" name="laboratuvarlar" value="Safety" id="lab-safety" class="d-none">
+                                    <span class="badge bg-primary">Safety</span>
+                                </label>
+                                <label class="laboratuvar-badge">
+                                    <input type="checkbox" name="laboratuvarlar" value="Standby" id="lab-standby" class="d-none">
+                                    <span class="badge bg-info text-dark">Standby</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="gorsel" class="form-label">Ürün Görseli</label>
+                            <input class="form-control" type="file" id="gorsel" name="gorsel" accept="image/*">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                        <button type="submit" class="btn btn-primary">Ürün Ekle</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function updateLaboratuvarDurum(urunLaboratuvarId, newDurum) {
+            fetch(`/update_laboratuvar_durum/${urunLaboratuvarId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ durum: newDurum })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Durum başarıyla güncellendi:', data.message);
+                    location.reload();
+                } else {
+                    console.error('Durum güncellenirken hata oluştu:', data.message);
+                    alert('Durum güncellenemedi: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Fetch hatası:', error);
+                alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+            });
+        }
+    </script>
+</body>
+</html> 

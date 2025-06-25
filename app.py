@@ -203,7 +203,7 @@ def index():
                 continue
             if jira_no and jira_no.lower() not in (u.jira_no or '').lower():
                 continue
-            if lab and not (u.durum == 'Laboratuvarda' and any(lab.strip().lower() == l.strip().lower() for l in (u.laboratuvarlar or '').split(','))):
+            if lab and not (u.durum != 'Hurda' and any(lab.strip().lower() == l.strip().lower() for l in (u.laboratuvarlar or '').split(','))):
                 continue
             if durum and u.durum != durum:
                 continue

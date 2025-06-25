@@ -611,7 +611,7 @@
                                 {% if genel_durum == 'Hurda' %}
                                     <span class="badge bg-danger fs-5 px-4 py-2">Hurda</span>
                                 {% elif genel_durum == 'Transfer Edildi' %}
-                                    <span class="badge bg-secondary fs-5 px-4 py-2">Transfer Edildi</span>
+                                    <span class="badge bg-success fs-5 px-4 py-2">Transfer Edildi</span>
                                 {% elif genel_durum == 'Laboratuvarda' %}
                                     <span class="badge bg-info text-white fs-5 px-4 py-2">Laboratuvarda</span>
                                 {% elif genel_durum == 'Bekleme Alanında' %}
@@ -655,7 +655,7 @@
                                     <span class="fw-bold">{{ lab_durum.laboratuvar }}</span>
                                     <span class="lab-badge lab-badge-flex ms-2
                                         {% if lab_durum.durum == 'Hurda' %}bg-danger text-white
-                                        {% elif lab_durum.durum == 'Transfer Edildi' %}bg-secondary text-white
+                                        {% elif lab_durum.durum == 'Transfer Edildi' %}bg-success text-white
                                         {% elif lab_durum.durum == 'Laboratuvarda' %}bg-info text-white
                                         {% elif lab_durum.durum in ['Bekleme Alanı', 'Bekleme Alanında'] %}bg-warning text-dark
                                         {% elif lab_durum.durum == 'Yolda' %}bg-secondary text-white

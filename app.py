@@ -186,6 +186,8 @@ def logout():
 
 @app.route('/')
 def index():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
     try:
         urunler = Urun.query.order_by(Urun.gonderim_tarihi.desc()).all()
         # Filtre parametrelerini tekrar ekle
@@ -211,7 +213,7 @@ def index():
                 if jira_no:
                     urunler = [u for u in urunler if jira_no.lower() in (u.jira_no or '').lower()]
                 if lab:
-                    urunler = [u for u in urunler if lab in (u.laboratuvarlar or '')]
+                    urunler = [u for u in urunler if u.durum != 'Hurda' and lab in [l.strip() for l in (u.laboratuvarlar or '').split(',')]]
                 if durum:
                     urunler = [u for u in urunler if u.durum == durum]
         app.logger.info(f'Ana ekranda listelenecek ürün sayısı: {len(urunler)}')

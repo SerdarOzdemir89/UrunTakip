@@ -197,12 +197,11 @@ def index():
         lab = request.args.get('lab', '')
         durum = request.args.get('durum', '')
 
-        # Eğer hiçbir filtre yoksa (yani ana sayfa açılışı), sadece laboratuvarda olan ürünleri göster
         filtre_var_mi = any([isletme, model_no, jira_no, lab, durum])
-        if not filtre_var_mi or (durum == ''):
-            urunler = Urun.query.order_by(Urun.gonderim_tarihi.desc()).all()
+        if not filtre_var_mi or (durum == '') or (durum == 'Tümü'):
+            # Tümü veya hiç filtre yoksa, hurda hariç tüm ürünler
+            urunler = [u for u in Urun.query.order_by(Urun.gonderim_tarihi.desc()).all() if u.durum != 'Hurda']
         else:
-            # Öncelik: Hurda
             if durum == 'Hurda':
                 urunler = [u for u in urunler if u.durum == 'Hurda']
             else:
@@ -213,7 +212,7 @@ def index():
                 if jira_no:
                     urunler = [u for u in urunler if jira_no.lower() in (u.jira_no or '').lower()]
                 if lab:
-                    urunler = [u for u in urunler if u.durum != 'Hurda' and lab in [l.strip() for l in (u.laboratuvarlar or '').split(',')]]
+                    urunler = [u for u in urunler if u.durum == 'Laboratuvarda' and lab in [l.strip() for l in (u.laboratuvarlar or '').split(',')]]
                 if durum:
                     urunler = [u for u in urunler if u.durum == durum]
         app.logger.info(f'Ana ekranda listelenecek ürün sayısı: {len(urunler)}')
@@ -1051,6 +1050,26 @@ def update_urun_durum_from_labs(urun):
         urun.durum = 'Bekleme Alanında'
         urun.hurda_tarihi = None
         urun.hurda_aciklama = None
+
+@app.route('/toplu_guncelle', methods=['POST'])
+@login_required
+def toplu_guncelle():
+    try:
+        for urun in Urun.query.all():
+            urun_id = urun.id
+            urun.isletme = request.form.get(f'isletme_{urun_id}', urun.isletme)
+            urun.model_no = request.form.get(f'model_no_{urun_id}', urun.model_no)
+            urun.seri_no = request.form.get(f'seri_no_{urun_id}', urun.seri_no)
+            urun.jira_no = request.form.get(f'jira_no_{urun_id}', urun.jira_no)
+            urun.aciklama = request.form.get(f'aciklama_{urun_id}', urun.aciklama)
+            urun.laboratuvarlar = request.form.get(f'laboratuvarlar_{urun_id}', urun.laboratuvarlar)
+            urun.durum = request.form.get(f'durum_{urun_id}', urun.durum)
+        db.session.commit()
+        flash('Tüm ürünler başarıyla güncellendi!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Hata oluştu: {str(e)}', 'error')
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     with app.app_context():

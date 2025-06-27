@@ -1069,13 +1069,8 @@ def toplu_guncelle():
 
 if __name__ == '__main__':
     with app.app_context():
-        # Veritabanını oluştur
-        db.create_all()
-        try:
-            print('Tablolar:', db.engine.table_names())
-        except Exception as e:
-            print('Tablo isimleri alınamadı:', str(e))
-        # Örnek kullanıcıları oluştur
-        create_example_users()
-    
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'depo_takip.db')
+        if not os.path.exists(db_path):
+            db.create_all()
+            create_example_users()
     app.run(debug=True, host='0.0.0.0', port=5003)

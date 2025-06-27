@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'gizli-anahtar-123'  # Flash mesajları için gerekli
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.dirname(os.path.abspath(__file__)), 'depo_takip.db')
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.dirname(os.path.abspath(__file__)), 'depo_takip.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://tobedhw_user:Yn3LIFtlUmsVQNZCsCtFP9zKfHABLg7F@dpg-d1f77oqli9vc739mj9mg-a:5432/tobedhw'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static/images')
 app.config['DEFAULT_LOGO_PATH'] = 'static/images/owl-logo.png'

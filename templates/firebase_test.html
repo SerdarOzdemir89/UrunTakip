@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Test - Depo Takip</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script type="module" src="{{ url_for('static', filename='js/firebase-config.js') }}"></script>
+    
+    <style>
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+        }
+        .log-output {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            padding: 1rem;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.875rem;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .status-success { background-color: #198754; }
+        .status-error { background-color: #dc3545; }
+        .status-warning { background-color: #ffc107; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-flask me-2"></i>Depo Takip - Firebase Test
+            </a>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-light">Ana Sayfaya Dön</a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h1><i class="fab fa-google me-2"></i>Firebase Test Paneli</h1>
+                <p class="text-muted">Firebase entegrasyonunu test edin ve durumunu kontrol edin.</p>
+            </div>
+        </div>
+
+        <!-- Firebase Durum -->
+        <div class="test-section">
+            <h3><i class="fas fa-info-circle me-2"></i>Firebase Durum</h3>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">
+                                <span id="auth-status" class="status-indicator status-error"></span>
+                                Firebase Auth
+                            </h5>
+                            <p id="auth-status-text" class="card-text">Yükleniyor...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">
+                                <span id="firestore-status" class="status-indicator status-error"></span>
+                                Firestore
+                            </h5>
+                            <p id="firestore-status-text" class="card-text">Yükleniyor...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">
+                                <span id="storage-status" class="status-indicator status-error"></span>
+                                Storage
+                            </h5>
+                            <p id="storage-status-text" class="card-text">Yükleniyor...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auth Test -->
+        <div class="test-section">
+            <h3><i class="fas fa-user-shield me-2"></i>Authentication Test</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Test Kullanıcısı ile Giriş</h5>
+                    <div class="mb-3">
+                        <label class="form-label">E-posta</label>
+                        <input type="email" class="form-control" id="test-email" value="test@example.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Şifre</label>
+                        <input type="password" class="form-control" id="test-password" value="123456">
+                    </div>
+                    <button class="btn btn-primary" onclick="testFirebaseLogin()">
+                        <i class="fas fa-sign-in-alt me-1"></i>Test Giriş
+                    </button>
+                    <button class="btn btn-success ms-2" onclick="testFirebaseSignup()">
+                        <i class="fas fa-user-plus me-1"></i>Test Kayıt
+                    </button>
+                    <button class="btn btn-secondary ms-2" onclick="testFirebaseLogout()">
+                        <i class="fas fa-sign-out-alt me-1"></i>Çıkış
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <h5>Auth Durumu</h5>
+                    <div id="auth-user-info" class="alert alert-info">Kullanıcı bilgisi yok</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Firestore Test -->
+        <div class="test-section">
+            <h3><i class="fas fa-database me-2"></i>Firestore Test</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Test Ürünü Kaydet</h5>
+                    <div class="mb-3">
+                        <label class="form-label">Ürün Adı</label>
+                        <input type="text" class="form-control" id="product-name" value="Test Ürünü">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Seri No</label>
+                        <input type="text" class="form-control" id="product-serial" value="TEST123">
+                    </div>
+                    <button class="btn btn-primary" onclick="testFirestoreSave()">
+                        <i class="fas fa-save me-1"></i>Kaydet
+                    </button>
+                    <button class="btn btn-info ms-2" onclick="testFirestoreRead()">
+                        <i class="fas fa-search me-1"></i>Ürünleri Listele
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <h5>Firestore Sonuçları</h5>
+                    <div id="firestore-results" class="alert alert-secondary">Sonuç burada görünecek</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Storage Test -->
+        <div class="test-section">
+            <h3><i class="fas fa-cloud-upload-alt me-2"></i>Storage Test</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Dosya Yükleme Testi</h5>
+                    <div class="mb-3">
+                        <label class="form-label">Test Dosyası Seç</label>
+                        <input type="file" class="form-control" id="test-file" accept="image/*">
+                    </div>
+                    <button class="btn btn-primary" onclick="testStorageUpload()">
+                        <i class="fas fa-upload me-1"></i>Yükle
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <h5>Storage Sonuçları</h5>
+                    <div id="storage-results" class="alert alert-secondary">Sonuç burada görünecek</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log Output -->
+        <div class="test-section">
+            <h3><i class="fas fa-terminal me-2"></i>Test Logları</h3>
+            <div class="log-output" id="log-output">Firebase test logları burada görünecek...\n</div>
+            <button class="btn btn-outline-secondary mt-2" onclick="clearLogs()">
+                <i class="fas fa-trash me-1"></i>Logları Temizle
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase Uygulama Fonksiyonları -->
+    <script src="{{ url_for('static', filename='js/firebase-app.js') }}"></script>
+    
+    <script>
+        // Log fonksiyonu
+        function addLog(message, type = 'info') {
+            const logOutput = document.getElementById('log-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            logOutput.textContent += logMessage;
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('log-output').textContent = 'Loglar temizlendi...\n';
+        }
+
+        // Firebase durum kontrolü
+        function checkFirebaseStatus() {
+            const checkInterval = setInterval(() => {
+                // Auth status
+                if (window.firebaseAuth) {
+                    document.getElementById('auth-status').className = 'status-indicator status-success';
+                    document.getElementById('auth-status-text').textContent = 'Aktif';
+                    addLog('Firebase Auth başarıyla yüklendi', 'success');
+                } else {
+                    document.getElementById('auth-status').className = 'status-indicator status-error';
+                    document.getElementById('auth-status-text').textContent = 'Yüklenemedi';
+                }
+
+                // Firestore status
+                if (window.firebaseDb) {
+                    document.getElementById('firestore-status').className = 'status-indicator status-success';
+                    document.getElementById('firestore-status-text').textContent = 'Aktif';
+                    addLog('Firebase Firestore başarıyla yüklendi', 'success');
+                } else {
+                    document.getElementById('firestore-status').className = 'status-indicator status-error';
+                    document.getElementById('firestore-status-text').textContent = 'Yüklenemedi';
+                }
+
+                // Storage status
+                if (window.firebaseStorage) {
+                    document.getElementById('storage-status').className = 'status-indicator status-success';
+                    document.getElementById('storage-status-text').textContent = 'Aktif';
+                    addLog('Firebase Storage başarıyla yüklendi', 'success');
+                } else {
+                    document.getElementById('storage-status').className = 'status-indicator status-error';
+                    document.getElementById('storage-status-text').textContent = 'Yüklenemedi';
+                }
+
+                // Tüm servisler yüklendiğinde interval'ı durdur
+                if (window.firebaseAuth && window.firebaseDb && window.firebaseStorage) {
+                    clearInterval(checkInterval);
+                    addLog('Tüm Firebase servisleri aktif!', 'success');
+                }
+            }, 1000);
+        }
+
+        // Auth test fonksiyonları
+        async function testFirebaseLogin() {
+            const email = document.getElementById('test-email').value;
+            const password = document.getElementById('test-password').value;
+            
+            addLog(`Giriş denemesi: ${email}`, 'info');
+            
+            const result = await window.firebaseApp.signIn(email, password);
+            if (result.success) {
+                addLog('Giriş başarılı!', 'success');
+                updateAuthInfo(result.user);
+            } else {
+                addLog(`Giriş hatası: ${result.error}`, 'error');
+            }
+        }
+
+        async function testFirebaseSignup() {
+            const email = document.getElementById('test-email').value;
+            const password = document.getElementById('test-password').value;
+            
+            addLog(`Kayıt denemesi: ${email}`, 'info');
+            
+            const result = await window.firebaseApp.signUp(email, password);
+            if (result.success) {
+                addLog('Kayıt başarılı!', 'success');
+                updateAuthInfo(result.user);
+            } else {
+                addLog(`Kayıt hatası: ${result.error}`, 'error');
+            }
+        }
+
+        async function testFirebaseLogout() {
+            addLog('Çıkış yapılıyor...', 'info');
+            
+            const result = await window.firebaseApp.signOut();
+            if (result.success) {
+                addLog('Çıkış başarılı!', 'success');
+                updateAuthInfo(null);
+            } else {
+                addLog(`Çıkış hatası: ${result.error}`, 'error');
+            }
+        }
+
+        function updateAuthInfo(user) {
+            const authInfo = document.getElementById('auth-user-info');
+            if (user) {
+                authInfo.className = 'alert alert-success';
+                authInfo.innerHTML = `
+                    <strong>Giriş Yapan Kullanıcı:</strong><br>
+                    E-posta: ${user.email}<br>
+                    UID: ${user.uid}
+                `;
+            } else {
+                authInfo.className = 'alert alert-info';
+                authInfo.textContent = 'Kullanıcı bilgisi yok';
+            }
+        }
+
+        // Firestore test fonksiyonları
+        async function testFirestoreSave() {
+            const productName = document.getElementById('product-name').value;
+            const productSerial = document.getElementById('product-serial').value;
+            
+            const productData = {
+                name: productName,
+                serial: productSerial,
+                testData: true
+            };
+            
+            addLog('Firestore\'a kayıt yapılıyor...', 'info');
+            
+            const result = await window.firebaseApp.saveProduct(productData);
+            if (result.success) {
+                addLog(`Firestore kayıt başarılı! ID: ${result.id}`, 'success');
+                document.getElementById('firestore-results').innerHTML = `
+                    <strong>Kayıt Başarılı!</strong><br>
+                    Ürün ID: ${result.id}<br>
+                    Ürün Adı: ${productName}
+                `;
+                document.getElementById('firestore-results').className = 'alert alert-success';
+            } else {
+                addLog(`Firestore kayıt hatası: ${result.error}`, 'error');
+                document.getElementById('firestore-results').textContent = `Hata: ${result.error}`;
+                document.getElementById('firestore-results').className = 'alert alert-danger';
+            }
+        }
+
+        async function testFirestoreRead() {
+            addLog('Firestore\'dan ürünler getiriliyor...', 'info');
+            
+            const result = await window.firebaseApp.getProducts();
+            if (result.success) {
+                addLog(`${result.products.length} ürün getirildi`, 'success');
+                
+                let html = `<strong>${result.products.length} Ürün Bulundu:</strong><br>`;
+                result.products.forEach((product, index) => {
+                    html += `${index + 1}. ${product.name || product.model_no || 'İsimsiz'} - ${product.serial || product.seri_no || 'Seri yok'}<br>`;
+                });
+                
+                document.getElementById('firestore-results').innerHTML = html;
+                document.getElementById('firestore-results').className = 'alert alert-success';
+            } else {
+                addLog(`Firestore okuma hatası: ${result.error}`, 'error');
+                document.getElementById('firestore-results').textContent = `Hata: ${result.error}`;
+                document.getElementById('firestore-results').className = 'alert alert-danger';
+            }
+        }
+
+        // Storage test fonksiyonu
+        async function testStorageUpload() {
+            const fileInput = document.getElementById('test-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                addLog('Lütfen bir dosya seçin', 'warning');
+                return;
+            }
+            
+            addLog(`Dosya yükleniyor: ${file.name}`, 'info');
+            
+            const fileName = `test_${Date.now()}_${file.name}`;
+            const result = await window.firebaseApp.uploadImage(file, fileName);
+            
+            if (result.success) {
+                addLog(`Dosya yükleme başarılı! URL: ${result.url}`, 'success');
+                document.getElementById('storage-results').innerHTML = `
+                    <strong>Yükleme Başarılı!</strong><br>
+                    <a href="${result.url}" target="_blank">Dosyayı Görüntüle</a><br>
+                    <img src="${result.url}" style="max-width: 100px; max-height: 100px;" class="mt-2">
+                `;
+                document.getElementById('storage-results').className = 'alert alert-success';
+            } else {
+                addLog(`Storage yükleme hatası: ${result.error}`, 'error');
+                document.getElementById('storage-results').textContent = `Hata: ${result.error}`;
+                document.getElementById('storage-results').className = 'alert alert-danger';
+            }
+        }
+
+        // Sayfa yüklendiğinde çalışacak
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('Firebase test sayfası yüklendi', 'info');
+            checkFirebaseStatus();
+            
+            // Auth state listener
+            if (window.firebaseOnAuthStateChanged && window.firebaseAuth) {
+                window.firebaseOnAuthStateChanged(window.firebaseAuth, (user) => {
+                    updateAuthInfo(user);
+                    if (user) {
+                        addLog(`Kullanıcı oturum açtı: ${user.email}`, 'info');
+                    } else {
+                        addLog('Kullanıcı oturum kapattı', 'info');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

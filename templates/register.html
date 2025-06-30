@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Kayıt Ol</title>
+</head>
+<body>
+    <h2>Kayıt Ol</h2>
+    <form method="POST">
+        <label>Kullanıcı Adı:</label><br>
+        <input type="text" name="username" required><br>
+        <label>Şifre:</label><br>
+        <input type="password" name="password" required><br>
+        <label>Rol:</label><br>
+        <select name="role">
+            <option value="isletme">İşletme</option>
+            <option value="admin">Admin</option>
+        </select><br>
+        <label>İşletme (isteğe bağlı):</label><br>
+        <input type="text" name="isletme"><br><br>
+        <button type="submit">Kayıt Ol</button>
+    </form>
+    <a href="{{ url_for('login') }}">Giriş Yap</a>
+</body>
+</html> 

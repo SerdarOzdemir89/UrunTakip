@@ -6,6 +6,9 @@
     <title>Test & Onay Ürün Takip Sistemi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script type="module" src="{{ url_for('static', filename='js/firebase-config.js') }}"></script>
     <style>
         body, .container {
             font-size: 1rem;
@@ -515,6 +518,9 @@
                 <span class="navbar-text text-white me-3">
                     <i class="fas fa-user me-2"></i>{{ session['username'] }} ({{ session['role'] }})
                 </span>
+                <a href="{{ url_for('firebase_test') }}" class="btn btn-outline-light btn-sm me-2">
+                    <i class="fab fa-google me-2"></i>Firebase Test
+                </a>
                 <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">
                     <i class="fas fa-sign-out-alt me-2"></i>Çıkış Yap
                 </a>
@@ -593,29 +599,19 @@
             {% for urun in urunler %}
             <div class="col-md-4">
                 <div class="card h-100 shadow-sm">
-                    <a href="{{ url_for('urun_detay', urun_id=urun.id) }}" style="text-decoration:none;">
+                    <a href="{{ url_for('urun_detay', product_id=urun.id) }}" style="text-decoration:none; color: inherit;">
                         <div class="product-image-wrapper {% if urun.durum == 'Hurda' %}hurda{% elif urun.durum == 'Bekleme Alanında' %}bekleme{% elif urun.durum == 'Yolda' %}yolda{% endif %}">
-                            {% set genel_durum = 'Durum Yok' %}
-                            {% for lab_durum in urun.laboratuvar_durumlari %}
-                                {% if lab_durum.durum == 'Hurda' %}
-                                    {% set genel_durum = 'Hurda' %}
-                                {% elif lab_durum.durum == 'Transfer Edildi' %}
-                                    {% set genel_durum = 'Transfer Edildi' %}
-                                {% elif lab_durum.durum == 'Laboratuvarda' %}
-                                    {% set genel_durum = 'Laboratuvarda' %}
-                                {% elif lab_durum.durum == 'Bekleme Alanında' and genel_durum not in ['Laboratuvarda', 'Transfer Edildi', 'Hurda'] %}
-                                    {% set genel_durum = 'Bekleme Alanında' %}
-                                {% endif %}
-                            {% endfor %}
                             <div class="text-center mt-3">
-                                {% if genel_durum == 'Hurda' %}
+                                {% if urun.durum == 'Hurda' %}
                                     <span class="badge bg-danger fs-5 px-4 py-2">Hurda</span>
-                                {% elif genel_durum == 'Transfer Edildi' %}
+                                {% elif urun.durum == 'Transfer Edildi' %}
                                     <span class="badge bg-success fs-5 px-4 py-2">Transfer Edildi</span>
-                                {% elif genel_durum == 'Laboratuvarda' %}
+                                {% elif urun.durum == 'Laboratuvarda' %}
                                     <span class="badge bg-info text-white fs-5 px-4 py-2">Laboratuvarda</span>
-                                {% elif genel_durum == 'Bekleme Alanında' %}
+                                {% elif urun.durum == 'Bekleme Alanında' %}
                                     <span class="badge bg-warning text-dark fs-5 px-4 py-2">Bekleme Alanında</span>
+                                {% elif urun.durum == 'Yolda' %}
+                                    <span class="badge bg-secondary text-white fs-5 px-4 py-2">Yolda</span>
                                 {% endif %}
                             </div>
                             <img src="{{ url_for('static', filename=urun.gorsel_path.replace('static/', '')) if urun.gorsel_path else url_for('static', filename='images/owl-logo.png') }}"
@@ -623,9 +619,8 @@
                                 onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/owl-logo.png') }}';">
                             <span class="corner-icon"><i class="fas fa-image"></i></span>
                         </div>
-                    </a>
-                    <div class="card-body text-center pt-2 pb-1">
-                        <h6 class="card-title mb-2" style="font-size:1.08rem; font-weight:700; color:#0d47a1;">{{ urun.model_no if urun.model_no else 'Belirtilmemiş' }}</h6>
+                        <div class="card-body text-center pt-2 pb-1">
+                            <h6 class="card-title mb-2" style="font-size:1.08rem; font-weight:700; color:#0d47a1;">{{ urun.model_no if urun.model_no else 'Belirtilmemiş' }}</h6>
                         <div class="card-info-sm mb-1"><span class="fw-bold">İşletme:</span> {{ urun.isletme if urun.isletme else 'Belirtilmemiş' }}</div>
                         <div class="card-info-sm"><span class="fw-bold">Jira No:</span> 
                             {% if urun.jira_no %}
@@ -634,19 +629,20 @@
                                 Belirtilmemiş
                             {% endif %}
                         </div>
-                        <div class="card-info-sm mt-1">
-                            <span class="fw-bold">Durum:</span>
-                            {% if urun.durum == 'Laboratuvarda' %}
-                                Ürün Laboratuvarda
-                            {% elif urun.durum == 'Yolda' %}
-                                Yolda
-                            {% elif urun.durum == 'Hurda' %}
-                                Hurda
-                            {% elif urun.durum == 'Bekleme Alanında' %}
-                                Bekleme Alanında
-                            {% endif %}
+                            <div class="card-info-sm mt-1">
+                                <span class="fw-bold">Durum:</span>
+                                {% if urun.durum == 'Laboratuvarda' %}
+                                    Ürün Laboratuvarda
+                                {% elif urun.durum == 'Yolda' %}
+                                    Yolda
+                                {% elif urun.durum == 'Hurda' %}
+                                    Hurda
+                                {% elif urun.durum == 'Bekleme Alanında' %}
+                                    Bekleme Alanında
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
+                    </a>
                     <div class="card-footer bg-transparent border-top">
                         <h6 class="card-subtitle mb-2 text-muted"><i class="fas fa-flask me-1"></i> Atanan Laboratuvarlar:</h6>
                         <div class="list-group list-group-flush">
@@ -665,7 +661,7 @@
                                     </span>
                                     <select class="form-select form-select-sm lab-select-flex ms-2" onchange="updateLaboratuvarDurum({{ lab_durum.id }}, this.value)">
                                         <option value="Hurda" {% if lab_durum.durum == 'Hurda' %}selected{% endif %}>Hurda</option>
-                                        <option value="Bekleme Alanı" {% if lab_durum.durum == 'Bekleme Alanı' or lab_durum.durum == 'Bekleme Alanında' %}selected{% endif %}>Bekleme Alanı</option>
+                                        <option value="Bekleme Alanında" {% if lab_durum.durum == 'Bekleme Alanı' or lab_durum.durum == 'Bekleme Alanında' %}selected{% endif %}>Bekleme Alanı</option>
                                         <option value="Laboratuvarda" {% if lab_durum.durum == 'Laboratuvarda' %}selected{% endif %}>Lab.</option>
                                         <option value="Transfer Edildi" {% if lab_durum.durum == 'Transfer Edildi' %}selected{% endif %}>Transfer...</option>
                                         <option value="Yolda" {% if lab_durum.durum == 'Yolda' %}selected{% endif %}>Yolda</option>
@@ -679,17 +675,19 @@
                         <hr>
                         <div class="d-flex flex-column align-items-center">
                             <div class="d-flex flex-wrap justify-content-center gap-2 mt-2">
-                                {% if urun.durum != 'Bekleme Alanında' and session.get('user_id') %}
-                                <form action="{{ url_for('bekleme_alani_yap', urun_id=urun.id) }}" method="post" style="display:inline-block;">
-                                    <button type="submit" class="btn btn-sm btn-warning px-3 py-2">
-                                        <i class="fas fa-warehouse me-1"></i>Bekleme Alanına Taşı
+                                {% if session.get('role') == 'admin' %}
+                                    {% if urun.durum != 'Bekleme Alanında' and session.get('user_id') %}
+                                    <form action="{{ url_for('bekleme_alani_yap', urun_id=urun.id) }}" method="post" style="display:inline-block;">
+                                        <button type="submit" class="btn btn-sm btn-warning px-3 py-2">
+                                            <i class="fas fa-warehouse me-1"></i>Bekleme Alanına Taşı
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    {% if urun.durum == 'Laboratuvarda' or urun.durum == 'Bekleme Alanında' %}
+                                    <button type="button" class="btn btn-sm btn-outline-danger px-3 py-2" data-bs-toggle="modal" data-bs-target="#hurdaModal{{ urun.id }}">
+                                        <i class="fas fa-trash-alt me-1"></i>Hurda Et
                                     </button>
-                                </form>
-                                {% endif %}
-                                {% if urun.durum == 'Laboratuvarda' or urun.durum == 'Bekleme Alanında' %}
-                                <button type="button" class="btn btn-sm btn-outline-danger px-3 py-2" data-bs-toggle="modal" data-bs-target="#hurdaModal{{ urun.id }}">
-                                    <i class="fas fa-trash-alt me-1"></i>Hurda Et
-                                </button>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         </div>
@@ -831,29 +829,60 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase Uygulama Fonksiyonları -->
+    <script src="{{ url_for('static', filename='js/firebase-app.js') }}"></script>
+    
     <script>
-        function updateLaboratuvarDurum(urunLaboratuvarId, newDurum) {
-            fetch(`/update_laboratuvar_durum/${urunLaboratuvarId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ durum: newDurum })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('Durum başarıyla güncellendi:', data.message);
-                    location.reload();
+        // Firebase Test Fonksiyonları
+        function testFirebaseConnection() {
+            console.log('Firebase bağlantısı test ediliyor...');
+            
+            // Firebase servislerinin yüklenip yüklenmediğini kontrol et
+            if (window.firebaseAuth && window.firebaseDb && window.firebaseStorage) {
+                console.log('✅ Firebase servisleri başarıyla yüklendi!');
+                console.log('- Auth:', window.firebaseAuth);
+                console.log('- Firestore:', window.firebaseDb);
+                console.log('- Storage:', window.firebaseStorage);
+                return true;
+            } else {
+                console.log('❌ Firebase servisleri henüz yüklenmedi');
+                return false;
+            }
+        }
+        
+        // Sayfa yüklendiğinde Firebase bağlantısını test et
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                testFirebaseConnection();
+            }, 2000);
+        });
+        
+        // Firebase ile senkronize ürün ekleme fonksiyonu
+        async function addProductWithFirebase(formData) {
+            try {
+                const productData = {
+                    isletme: formData.get('isletme'),
+                    model_no: formData.get('model_no'),
+                    seri_no: formData.get('seri_no'),
+                    jira_no: formData.get('jira_no'),
+                    aciklama: formData.get('aciklama'),
+                    laboratuvarlar: formData.getAll('laboratuvarlar')
+                };
+                
+                // Firebase'e kaydet
+                const result = await window.firebaseApp.saveProduct(productData);
+                
+                if (result.success) {
+                    console.log('Ürün Firebase\'e kaydedildi:', result.id);
+                    return result;
                 } else {
-                    console.error('Durum güncellenirken hata oluştu:', data.message);
-                    alert('Durum güncellenemedi: ' + data.message);
+                    console.error('Firebase kayıt hatası:', result.error);
+                    return result;
                 }
-            })
-            .catch(error => {
-                console.error('Fetch hatası:', error);
-                alert('Bir hata oluştu. Lütfen tekrar deneyin.');
-            });
+            } catch (error) {
+                console.error('Ürün ekleme hatası:', error);
+                return { success: false, error: error.message };
+            }
         }
     </script>
 </body>

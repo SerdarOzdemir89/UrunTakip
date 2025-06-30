@@ -134,14 +134,28 @@
                                 {{ urun.durum }}
                             </span>
                         </div>
+                        {% if urun.gonderim_tarihi %}
                         <div class="mb-3">
                             <h6><i class="fas fa-calendar me-2"></i>Gönderim Tarihi:</h6>
-                            <p class="lead">{{ urun.gonderim_tarihi.strftime('%d.%m.%Y %H:%M') }}</p>
+                            <p class="lead">
+                                {% if urun.gonderim_tarihi.strftime is defined %}
+                                    {{ urun.gonderim_tarihi.strftime('%d.%m.%Y %H:%M') }}
+                                {% else %}
+                                    {{ urun.gonderim_tarihi }}
+                                {% endif %}
+                            </p>
                         </div>
+                        {% endif %}
                         {% if urun.teslim_alma_tarihi %}
                         <div class="mb-3">
                             <h6><i class="fas fa-calendar-check me-2"></i>Teslim Alma Tarihi:</h6>
-                            <p class="lead">{{ urun.teslim_alma_tarihi.strftime('%d.%m.%Y %H:%M') }}</p>
+                            <p class="lead">
+                                {% if urun.teslim_alma_tarihi.strftime is defined %}
+                                    {{ urun.teslim_alma_tarihi.strftime('%d.%m.%Y %H:%M') }}
+                                {% else %}
+                                    {{ urun.teslim_alma_tarihi }}
+                                {% endif %}
+                            </p>
                         </div>
                         {% endif %}
                     </div>
@@ -156,27 +170,46 @@
                     </div>
                     <div class="card-body">
                         {% for lab_durum in urun.laboratuvar_durumlari %}
-                        <div class="lab-status {{ lab_durum.durum.lower() }}">
-                            {% if lab_durum.laboratuvar == 'Gerilim Performans' %}
-                                <i class="fas fa-bolt"></i>
-                            {% elif lab_durum.laboratuvar == 'Derating' %}
-                                <i class="fas fa-temperature-high"></i>
-                            {% elif lab_durum.laboratuvar == 'İklimlendirme ve Titreşim' %}
-                                <i class="fas fa-wind"></i>
-                            {% elif lab_durum.laboratuvar == 'EMC' %}
-                                <i class="fas fa-broadcast-tower"></i>
-                            {% elif lab_durum.laboratuvar == 'Safety' %}
-                                <i class="fas fa-shield-alt"></i>
-                            {% elif lab_durum.laboratuvar == 'IPC' %}
-                                <i class="fas fa-microchip"></i>
-                            {% elif lab_durum.laboratuvar == 'Optik Performans' %}
-                                <i class="fas fa-lightbulb"></i>
-                            {% elif lab_durum.laboratuvar == 'Dokunmatik Performans' %}
-                                <i class="fas fa-hand-pointer"></i>
-                            {% else %}
-                                <i class="fas fa-flask"></i>
-                            {% endif %}
-                            <strong>{{ lab_durum.laboratuvar }}:</strong> {{ lab_durum.durum }}
+                        <div class="lab-status-item mb-3 p-3 border rounded">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="lab-info">
+                                    {% if lab_durum.laboratuvar == 'Gerilim Performans' %}
+                                        <i class="fas fa-bolt me-2"></i>
+                                    {% elif lab_durum.laboratuvar == 'Derating' %}
+                                        <i class="fas fa-temperature-high me-2"></i>
+                                    {% elif lab_durum.laboratuvar == 'İklimlendirme ve Titreşim' %}
+                                        <i class="fas fa-wind me-2"></i>
+                                    {% elif lab_durum.laboratuvar == 'EMC' %}
+                                        <i class="fas fa-broadcast-tower me-2"></i>
+                                    {% elif lab_durum.laboratuvar == 'Safety' %}
+                                        <i class="fas fa-shield-alt me-2"></i>
+                                    {% elif lab_durum.laboratuvar == 'IPC' %}
+                                        <i class="fas fa-microchip me-2"></i>
+                                    {% elif lab_durum.laboratuvar == 'Optik Performans' %}
+                                        <i class="fas fa-lightbulb me-2"></i>
+                                    {% elif lab_durum.laboratuvar == 'Dokunmatik Performans' %}
+                                        <i class="fas fa-hand-pointer me-2"></i>
+                                    {% else %}
+                                        <i class="fas fa-flask me-2"></i>
+                                    {% endif %}
+                                    <strong>{{ lab_durum.laboratuvar }}</strong>
+                                </div>
+                                <div class="lab-status-controls">
+                                    <span class="badge bg-{{ 'success' if lab_durum.durum == 'Transfer Edildi' else 'warning' if lab_durum.durum == 'Laboratuvarda' else 'secondary' if lab_durum.durum == 'Yolda' else 'info' if lab_durum.durum == 'Bekleme Alanında' else 'danger' }} me-2">
+                                        {{ lab_durum.durum }}
+                                    </span>
+                                    <select class="form-select form-select-sm d-inline-block" style="width: auto;" onchange="updateLaboratuvarDurum(this, '{{ lab_durum.id }}', this.value)">
+                                        <option value="">Durum Değiştir</option>
+                                        <option value="Yolda" {% if lab_durum.durum == 'Yolda' %}disabled{% endif %}>Yolda</option>
+                                        <option value="Bekleme Alanında" {% if lab_durum.durum == 'Bekleme Alanında' %}disabled{% endif %}>Bekleme Alanında</option>
+                                        <option value="Laboratuvarda" {% if lab_durum.durum == 'Laboratuvarda' %}disabled{% endif %}>Laboratuvarda</option>
+                                        <option value="Transfer Edildi" {% if lab_durum.durum == 'Transfer Edildi' %}disabled{% endif %}>Transfer Edildi</option>
+                                        {% if session.get('role') == 'admin' %}
+                                        <option value="Hurda" {% if lab_durum.durum == 'Hurda' %}disabled{% endif %}>Hurda</option>
+                                        {% endif %}
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                         {% endfor %}
                     </div>
@@ -196,9 +229,7 @@
                     <button type="button" class="btn btn-primary btn-action me-2 mb-2" data-bs-toggle="modal" data-bs-target="#urunDuzenleModal">
                         <i class="fas fa-edit me-2"></i>Düzenle
                     </button>
-                    <button type="button" class="btn btn-danger btn-action me-2 mb-2" data-bs-toggle="modal" data-bs-target="#urunSilModal">
-                        <i class="fas fa-trash-alt me-2"></i>Sil
-                    </button>
+
                     {% endif %}
                 </div>
             </div>
@@ -276,7 +307,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form method="POST" action="{{ url_for('urun_duzenle', urun_id=urun.id) }}" enctype="multipart/form-data">
+                    <form method="POST" action="{{ url_for('urun_duzenle', product_id=urun.id) }}" enctype="multipart/form-data">
                         {% if session.get('role') == 'admin' %}
                         <div class="mb-3">
                             <label class="form-label">İşletme</label>
@@ -315,36 +346,41 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Laboratuvarlar</label>
+                            {% set urun_lab_listesi = [] %}
+                            {% for lab_durum in urun.laboratuvar_durumlari %}
+                                {% set _ = urun_lab_listesi.append(lab_durum.laboratuvar) %}
+                            {% endfor %}
+                            
                             <div class="form-check">
-                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="Gerilim Performans" {% if 'Gerilim Performans' in urun.get_laboratuvarlar() %}checked{% endif %}>
+                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="Gerilim Performans" {% if 'Gerilim Performans' in urun_lab_listesi %}checked{% endif %}>
                                 <label class="form-check-label">Gerilim Performans</label>
                             </div>
                             <div class="form-check">
-                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="Derating" {% if 'Derating' in urun.get_laboratuvarlar() %}checked{% endif %}>
+                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="Derating" {% if 'Derating' in urun_lab_listesi %}checked{% endif %}>
                                 <label class="form-check-label">Derating</label>
                             </div>
                             <div class="form-check">
-                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="İklimlendirme ve Titreşim" {% if 'İklimlendirme ve Titreşim' in urun.get_laboratuvarlar() %}checked{% endif %}>
+                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="İklimlendirme ve Titreşim" {% if 'İklimlendirme ve Titreşim' in urun_lab_listesi %}checked{% endif %}>
                                 <label class="form-check-label">İklimlendirme ve Titreşim</label>
                             </div>
                             <div class="form-check">
-                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="EMC" {% if 'EMC' in urun.get_laboratuvarlar() %}checked{% endif %}>
+                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="EMC" {% if 'EMC' in urun_lab_listesi %}checked{% endif %}>
                                 <label class="form-check-label">EMC</label>
                             </div>
                             <div class="form-check">
-                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="Safety" {% if 'Safety' in urun.get_laboratuvarlar() %}checked{% endif %}>
+                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="Safety" {% if 'Safety' in urun_lab_listesi %}checked{% endif %}>
                                 <label class="form-check-label">Safety</label>
                             </div>
                             <div class="form-check">
-                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="IPC" {% if 'IPC' in urun.get_laboratuvarlar() %}checked{% endif %}>
+                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="IPC" {% if 'IPC' in urun_lab_listesi %}checked{% endif %}>
                                 <label class="form-check-label">IPC</label>
                             </div>
                             <div class="form-check">
-                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="Optik Performans" {% if 'Optik Performans' in urun.get_laboratuvarlar() %}checked{% endif %}>
+                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="Optik Performans" {% if 'Optik Performans' in urun_lab_listesi %}checked{% endif %}>
                                 <label class="form-check-label">Optik Performans</label>
                             </div>
                             <div class="form-check">
-                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="Dokunmatik Performans" {% if 'Dokunmatik Performans' in urun.get_laboratuvarlar() %}checked{% endif %}>
+                                <input type="checkbox" class="form-check-input" name="laboratuvarlar" value="Dokunmatik Performans" {% if 'Dokunmatik Performans' in urun_lab_listesi %}checked{% endif %}>
                                 <label class="form-check-label">Dokunmatik Performans</label>
                             </div>
                         </div>
@@ -361,24 +397,7 @@
         </div>
     </div>
 
-    <!-- Silme Modal -->
-    <div class="modal fade" id="urunSilModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-trash-alt me-2"></i>Ürün Sil</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Bu ürünü silmek istediğinizden emin misiniz?</p>
-                    <form method="POST" action="{{ url_for('urun_sil', urun_id=urun.id) }}">
-                        <button type="submit" class="btn btn-danger">Evet, Sil</button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
@@ -394,6 +413,77 @@
                 }
             });
         });
+
+        // Laboratuvar durum güncelleme fonksiyonu
+        function updateLaboratuvarDurum(selectElement, urunLaboratuvarId, newDurum) {
+            if (!newDurum) return;
+            
+            console.log('Laboratuvar durum güncelleniyor:', urunLaboratuvarId, newDurum);
+            
+            // Badge elementini bul
+            const badgeElement = selectElement.previousElementSibling;
+            
+            // Badge'i hemen güncelle (kullanıcı deneyimi için)
+            if (badgeElement && badgeElement.classList.contains('badge')) {
+                badgeElement.textContent = newDurum;
+                
+                // Badge rengini duruma göre güncelle
+                badgeElement.className = 'badge me-2 bg-' + getBadgeColor(newDurum);
+            }
+            
+            // Dropdown'u sıfırla
+            selectElement.value = '';
+            
+            // Form data oluştur
+            const formData = new FormData();
+            formData.append('yeni_durum', newDurum);
+            
+            // Flask backend'e gönder
+            fetch('/laboratuvar_durum_guncelle/' + urunLaboratuvarId, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log('Durum başarıyla güncellendi');
+                    // Seçenekleri güncelle
+                    updateSelectOptions(selectElement, newDurum);
+                } else {
+                    console.error('Durum güncellenirken hata oluştu');
+                    alert('Durum güncellenemedi. Lütfen tekrar deneyin.');
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Fetch hatası:', error);
+                alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+                location.reload();
+            });
+        }
+        
+        // Badge rengi belirleme fonksiyonu
+        function getBadgeColor(durum) {
+            switch(durum) {
+                case 'Transfer Edildi': return 'success';
+                case 'Laboratuvarda': return 'warning';
+                case 'Yolda': return 'secondary';
+                case 'Bekleme Alanında': return 'info';
+                case 'Hurda': return 'danger';
+                default: return 'secondary';
+            }
+        }
+        
+        // Select seçeneklerini güncelleme fonksiyonu
+        function updateSelectOptions(selectElement, currentDurum) {
+            const options = selectElement.querySelectorAll('option');
+            options.forEach(option => {
+                if (option.value === currentDurum) {
+                    option.disabled = true;
+                } else if (option.value !== '') {
+                    option.disabled = false;
+                }
+            });
+        }
     </script>
 </body>
 </html> 

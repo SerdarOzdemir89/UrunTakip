@@ -6,6 +6,9 @@
     <title>Giriş - Laboratuvar Ürün Takip</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script type="module" src="{{ url_for('static', filename='js/firebase-config.js') }}"></script>
     <style>
         body {
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
@@ -101,10 +104,10 @@
                         {% endif %}
                     {% endwith %}
 
-                    <form method="post">
+                    <form method="post" id="loginForm">
                         <div class="mb-3">
-                            <label class="form-label">Kullanıcı Adı</label>
-                            <input type="text" class="form-control" name="username" required>
+                            <label class="form-label">Kullanıcı Adı/E-posta</label>
+                            <input type="text" class="form-control" name="username" id="username" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Şifre</label>
@@ -119,8 +122,9 @@
                             <i class="fas fa-sign-in-alt me-2"></i>Giriş Yap
                         </button>
                     </form>
-                    <div class="divider"></div>
-                    <div class="text-center">
+                    
+
+                    <div class="text-center mt-2">
                         <a href="{{ url_for('logout') }}" class="logout-link">
                             <i class="fas fa-sign-out-alt me-2"></i>Çıkış Yap
                         </a>
@@ -131,6 +135,9 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase Uygulama Fonksiyonları -->
+    <script src="{{ url_for('static', filename='js/firebase-app.js') }}"></script>
+    
     <script>
         function togglePassword(inputId) {
             var input = document.getElementById(inputId);
@@ -147,6 +154,64 @@
             }
         }
 
+        // Firebase ile giriş yapma
+        async function loginWithFirebase() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                alert('Lütfen e-posta ve şifre giriniz.');
+                return;
+            }
+            
+            // E-posta formatını kontrol et
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(username)) {
+                alert('Lütfen geçerli bir e-posta adresi giriniz.');
+                return;
+            }
+            
+            try {
+                // Firebase'den giriş yapmaya çalış
+                const result = await window.firebaseApp.signIn(username, password);
+                
+                if (result.success) {
+                    alert('Firebase giriş başarılı! Ana sayfaya yönlendiriliyorsunuz...');
+                    // Ana sayfaya yönlendir
+                    window.location.href = "{{ url_for('index') }}";
+                } else {
+                    alert('Firebase giriş hatası: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Firebase giriş hatası:', error);
+                alert('Giriş yaparken bir hata oluştu.');
+            }
+        }
+        
+        // Form submit event'ini dinle
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            const username = document.getElementById('username').value;
+            
+            // E-posta formatında ise Firebase ile de dene
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (emailRegex.test(username)) {
+                e.preventDefault(); // Normal form gönderimini durdur
+                
+                const password = document.getElementById('password').value;
+                const result = await window.firebaseApp.signIn(username, password);
+                
+                if (result.success) {
+                    // Firebase giriş başarılı, ana sayfaya yönlendir
+                    window.location.href = "{{ url_for('index') }}";
+                    return;
+                } else {
+                    // Firebase giriş başarısız, normal form submit'e devam et
+                    e.target.submit();
+                }
+            }
+            // E-posta formatında değilse normal form submit devam eder
+        });
+
         // 5 saniye sonra flash mesajlarını otomatik kapat
         setTimeout(function() {
             var alerts = document.querySelectorAll('.alert');
@@ -155,6 +220,17 @@
                 bsAlert.close();
             });
         }, 5000);
+        
+        // Firebase bağlantısını test et
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                if (window.firebaseAuth) {
+                    console.log('✅ Firebase Auth login sayfasında hazır!');
+                } else {
+                    console.log('❌ Firebase Auth yüklenmedi');
+                }
+            }, 2000);
+        });
     </script>
 </body>
 </html> 

@@ -827,8 +827,9 @@ def laboratuvar_durum_guncelle(status_id):
     try:
         yeni_durum = request.form.get('yeni_durum')
         hurda_aciklama = request.form.get('hurda_aciklama', '')
+        durum_notu = request.form.get('durum_notu', '')
         
-        logger.debug(f"[DEBUG] Laboratuvar durum güncelleme: status_id={status_id}, yeni_durum={yeni_durum}")
+        logger.debug(f"[DEBUG] Laboratuvar durum güncelleme: status_id={status_id}, yeni_durum={yeni_durum}, not={durum_notu}")
         
         # Firebase'de laboratuvar durumunu güncelle
         lab_status_ref = get_laboratory_status_collection()
@@ -854,6 +855,9 @@ def laboratuvar_durum_guncelle(status_id):
                 'updated_at': firestore.SERVER_TIMESTAMP
             }
             
+            if durum_notu:
+                update_data['durum_notu'] = durum_notu
+            
             if yeni_durum == 'Hurda':
                 update_data['hurda_tarihi'] = firestore.SERVER_TIMESTAMP
                 update_data['hurda_aciklama'] = hurda_aciklama
@@ -867,12 +871,21 @@ def laboratuvar_durum_guncelle(status_id):
                 update_product_status_based_on_labs(product_id)
             
             # Log kaydı
+            log_details = {
+                'status_id': status_id, 
+                'eski_durum': current_data.get('durum', 'Bilinmiyor'),
+                'yeni_durum': yeni_durum,
+                'laboratuvar': current_data.get('laboratuvar', 'Bilinmiyor')
+            }
+            if durum_notu:
+                log_details['not'] = durum_notu
+            
             create_log_entry(
                 session['user_id'],
                 session['username'],
-                f'Laboratuvar Durumu Güncellendi: {yeni_durum}',
+                f'Laboratuvar Durumu Değiştirildi: {current_data.get("laboratuvar", "Bilinmiyor")} - {current_data.get("durum", "Bilinmiyor")} → {yeni_durum}',
                 product_id,
-                json.dumps({'status_id': status_id, 'yeni_durum': yeni_durum})
+                json.dumps(log_details, ensure_ascii=False)
             )
             
             flash('Laboratuvar durumu güncellendi!', 'success')

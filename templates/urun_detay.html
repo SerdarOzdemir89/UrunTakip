@@ -195,19 +195,12 @@
                                     <strong>{{ lab_durum.laboratuvar }}</strong>
                                 </div>
                                 <div class="lab-status-controls">
-                                    <span class="badge bg-{{ 'success' if lab_durum.durum == 'Transfer Edildi' else 'warning' if lab_durum.durum == 'Laboratuvarda' else 'secondary' if lab_durum.durum == 'Yolda' else 'info' if lab_durum.durum == 'Bekleme Alanında' else 'danger' }} me-2">
-                                        {{ lab_durum.durum }}
+                                    <span class="badge bg-{{ 'success' if lab_durum.durum == 'Transfer Edildi' else 'warning' if lab_durum.durum == 'Laboratuvarda' else 'secondary' if lab_durum.durum == 'Yolda' else 'info' if lab_durum.durum == 'Bekleme Alanında' else 'danger' }} clickable-badge" 
+                                          style="cursor: pointer;" 
+                                          onclick="showStatusChangeModal('{{ lab_durum.id }}', '{{ lab_durum.laboratuvar }}', '{{ lab_durum.durum }}')"
+                                          title="Durumu değiştirmek için tıklayın">
+                                        {{ lab_durum.durum }} <i class="fas fa-edit ms-1"></i>
                                     </span>
-                                    <select class="form-select form-select-sm d-inline-block" style="width: auto;" onchange="updateLaboratuvarDurum(this, '{{ lab_durum.id }}', this.value)">
-                                        <option value="">Durum Değiştir</option>
-                                        <option value="Yolda" {% if lab_durum.durum == 'Yolda' %}disabled{% endif %}>Yolda</option>
-                                        <option value="Bekleme Alanında" {% if lab_durum.durum == 'Bekleme Alanında' %}disabled{% endif %}>Bekleme Alanında</option>
-                                        <option value="Laboratuvarda" {% if lab_durum.durum == 'Laboratuvarda' %}disabled{% endif %}>Laboratuvarda</option>
-                                        <option value="Transfer Edildi" {% if lab_durum.durum == 'Transfer Edildi' %}disabled{% endif %}>Transfer Edildi</option>
-                                        {% if session.get('role') == 'admin' %}
-                                        <option value="Hurda" {% if lab_durum.durum == 'Hurda' %}disabled{% endif %}>Hurda</option>
-                                        {% endif %}
-                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -251,6 +244,47 @@
                                 <button type="submit" class="btn btn-danger">Onayla</button>
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
                             </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Laboratuvar Durum Değiştirme Modal -->
+            <div class="modal fade" id="statusChangeModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title"><i class="fas fa-flask me-2"></i>Laboratuvar Durumu Değiştir</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <strong>Laboratuvar:</strong> <span id="modalLabName"></span>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Mevcut Durum:</strong> <span id="modalCurrentStatus"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label for="newStatus" class="form-label">Yeni Durum</label>
+                                <select class="form-select" id="newStatus" required>
+                                    <option value="">Durum Seçin</option>
+                                    <option value="Yolda">Yolda</option>
+                                    <option value="Bekleme Alanında">Bekleme Alanında</option>
+                                    <option value="Laboratuvarda">Laboratuvarda</option>
+                                    <option value="Transfer Edildi">Transfer Edildi</option>
+                                    {% if session.get('role') == 'admin' %}
+                                    <option value="Hurda">Hurda</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="statusNote" class="form-label">Açıklama (Opsiyonel)</label>
+                                <textarea class="form-control" id="statusNote" rows="2" placeholder="Durum değişikliği hakkında not..."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                            <button type="button" class="btn btn-primary" onclick="confirmStatusChange()">Durumu Güncelle</button>
                         </div>
                     </div>
                 </div>
@@ -414,74 +448,77 @@
             });
         });
 
-        // Laboratuvar durum güncelleme fonksiyonu
-        function updateLaboratuvarDurum(selectElement, urunLaboratuvarId, newDurum) {
-            if (!newDurum) return;
+        // Global değişkenler
+        let currentLabId = '';
+        let currentLabName = '';
+        let currentStatus = '';
+
+        // Modal açma fonksiyonu
+        function showStatusChangeModal(labId, labName, currentStat) {
+            currentLabId = labId;
+            currentLabName = labName;
+            currentStatus = currentStat;
             
-            console.log('Laboratuvar durum güncelleniyor:', urunLaboratuvarId, newDurum);
+            document.getElementById('modalLabName').textContent = labName;
+            document.getElementById('modalCurrentStatus').textContent = currentStat;
             
-            // Badge elementini bul
-            const badgeElement = selectElement.previousElementSibling;
+            // Mevcut durumu select'ten kaldır
+            const newStatusSelect = document.getElementById('newStatus');
+            const options = newStatusSelect.querySelectorAll('option');
+            options.forEach(option => {
+                option.disabled = (option.value === currentStat);
+            });
             
-            // Badge'i hemen güncelle (kullanıcı deneyimi için)
-            if (badgeElement && badgeElement.classList.contains('badge')) {
-                badgeElement.textContent = newDurum;
-                
-                // Badge rengini duruma göre güncelle
-                badgeElement.className = 'badge me-2 bg-' + getBadgeColor(newDurum);
+            // Modal'ı aç
+            const modal = new bootstrap.Modal(document.getElementById('statusChangeModal'));
+            modal.show();
+        }
+
+        // Durum değişikliğini onaylama
+        function confirmStatusChange() {
+            const newStatus = document.getElementById('newStatus').value;
+            const note = document.getElementById('statusNote').value;
+            
+            if (!newStatus) {
+                alert('Lütfen yeni durum seçin!');
+                return;
             }
             
-            // Dropdown'u sıfırla
-            selectElement.value = '';
+            if (newStatus === currentStatus) {
+                alert('Yeni durum mevcut durumla aynı olamaz!');
+                return;
+            }
             
             // Form data oluştur
             const formData = new FormData();
-            formData.append('yeni_durum', newDurum);
+            formData.append('yeni_durum', newStatus);
+            if (note) {
+                formData.append('durum_notu', note);
+            }
+            
+            console.log('Laboratuvar durum güncelleniyor:', currentLabId, newStatus);
             
             // Flask backend'e gönder
-            fetch('/laboratuvar_durum_guncelle/' + urunLaboratuvarId, {
+            fetch('/laboratuvar_durum_guncelle/' + currentLabId, {
                 method: 'POST',
                 body: formData
             })
             .then(response => {
                 if (response.ok) {
                     console.log('Durum başarıyla güncellendi');
-                    // Seçenekleri güncelle
-                    updateSelectOptions(selectElement, newDurum);
+                    // Modal'ı kapat
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('statusChangeModal'));
+                    modal.hide();
+                    // Sayfayı yenile
+                    location.reload();
                 } else {
                     console.error('Durum güncellenirken hata oluştu');
                     alert('Durum güncellenemedi. Lütfen tekrar deneyin.');
-                    location.reload();
                 }
             })
             .catch(error => {
                 console.error('Fetch hatası:', error);
                 alert('Bir hata oluştu. Lütfen tekrar deneyin.');
-                location.reload();
-            });
-        }
-        
-        // Badge rengi belirleme fonksiyonu
-        function getBadgeColor(durum) {
-            switch(durum) {
-                case 'Transfer Edildi': return 'success';
-                case 'Laboratuvarda': return 'warning';
-                case 'Yolda': return 'secondary';
-                case 'Bekleme Alanında': return 'info';
-                case 'Hurda': return 'danger';
-                default: return 'secondary';
-            }
-        }
-        
-        // Select seçeneklerini güncelleme fonksiyonu
-        function updateSelectOptions(selectElement, currentDurum) {
-            const options = selectElement.querySelectorAll('option');
-            options.forEach(option => {
-                if (option.value === currentDurum) {
-                    option.disabled = true;
-                } else if (option.value !== '') {
-                    option.disabled = false;
-                }
             });
         }
     </script>

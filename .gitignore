@@ -11,6 +11,9 @@ firebase-debug.*.log*
 .firebase/
 
 # Firebase config
+*firebase-adminsdk*.json
+serviceAccountKey.json
+tobed-hw-firebase-adminsdk*.json
 
 # Uncomment this if you'd like others to create their own Firebase project.
 # For a team working on the same Firebase project(s), it is recommended to leave

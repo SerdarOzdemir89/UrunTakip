@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_from_directory, current_app, jsonify
 import firebase_admin
 from firebase_admin import credentials, firestore, auth as firebase_auth, storage as firebase_storage
+from google.cloud import storage as gcs_storage
 from datetime import datetime
 import os
 import logging
@@ -8,6 +9,7 @@ import json
 from functools import wraps
 from werkzeug.utils import secure_filename
 from urllib.parse import urljoin
+import sqlite3
 
 # Logging ayarları
 logging.basicConfig(level=logging.DEBUG)
@@ -17,6 +19,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'gizli-anahtar-123'
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static/images')
 app.config['DEFAULT_LOGO_PATH'] = 'static/images/owl-logo.png'
+app.config['GCS_BUCKET_NAME'] = 'tobedtakip-images'
 
 # Firebase Admin SDK başlatma
 try:
@@ -33,10 +36,88 @@ try:
     FIREBASE_ENABLED = True
     logger.debug("Firestore client başarıyla oluşturuldu")
     
+    # Google Cloud Storage client'ı başlat
+    gcs_client = gcs_storage.Client()
+    GCS_ENABLED = True
+    logger.debug("Google Cloud Storage client başarıyla oluşturuldu")
+    
 except Exception as e:
     db = None
+    gcs_client = None
     FIREBASE_ENABLED = False
+    GCS_ENABLED = False
     logger.error(f"Firebase Admin SDK başlatılamadı: {e}")
+
+# SQLite veritabanı başlatma (Firebase çalışmazsa fallback)
+def init_sqlite():
+    conn = sqlite3.connect('depo_takip.db')
+    cursor = conn.cursor()
+    
+    # Users tablosu
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            role TEXT NOT NULL,
+            isletme TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Products tablosu
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            isletme TEXT,
+            model_no TEXT,
+            seri_no TEXT,
+            jira_no TEXT,
+            gorsel_path TEXT,
+            durum TEXT DEFAULT 'Yolda',
+            teslim_alan TEXT,
+            teslim_alma_tarihi TEXT,
+            laboratuvarlar TEXT,
+            aciklama TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Laboratory status tablosu
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS laboratory_status (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id TEXT NOT NULL,
+            laboratuvar TEXT NOT NULL,
+            durum TEXT,
+            hurda_tarihi TIMESTAMP,
+            hurda_aciklama TEXT,
+            durum_notu TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Logs tablosu
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT,
+            username TEXT,
+            action TEXT,
+            product_id TEXT,
+            details TEXT,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
+    logger.debug("SQLite veritabanı başlatıldı")
+
+# SQLite veritabanını başlat
+init_sqlite()
 
 # Debug bilgisi
 logger.debug(f"Uygulama başlatıldı")
@@ -55,6 +136,7 @@ isletmeler = [
     'Buzdolabı İşletmesi',
     'Temin Ürün Direktörlüğü',
     'Bulaşık Makinesi İşletmesi',
+    'Çamaşır Makinesi İşletmesi',
     'Kurutucu İşletmesi',
     'Küçük Ev Aletleri İşletmesi',
     'Beko Wuxi R&D',
@@ -106,94 +188,187 @@ def get_logs_collection():
 
 def create_user(username, password, role, isletme=None):
     try:
-        users_ref = get_users_collection()
-        if not users_ref:
-            return None
+        if FIREBASE_ENABLED:
+            users_ref = get_users_collection()
+            if not users_ref:
+                return None
+                
+            user_data = {
+                'username': username,
+                'password': password,
+                'role': role,
+                'isletme': isletme,
+                'created_at': firestore.SERVER_TIMESTAMP
+            }
             
-        user_data = {
-            'username': username,
-            'password': password,
-            'role': role,
-            'isletme': isletme,
-            'created_at': firestore.SERVER_TIMESTAMP
-        }
-        
-        doc_ref = users_ref.add(user_data)
-        logger.debug(f"Kullanıcı oluşturuldu: {doc_ref[1].id}")
-        return doc_ref[1].id
+            doc_ref = users_ref.add(user_data)
+            logger.debug(f"Kullanıcı oluşturuldu: {doc_ref[1].id}")
+            return doc_ref[1].id
+        else:
+            # SQLite fallback
+            conn = sqlite3.connect('depo_takip.db')
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO users (username, password, role, isletme)
+                VALUES (?, ?, ?, ?)
+            ''', (username, password, role, isletme))
+            user_id = cursor.lastrowid
+            conn.commit()
+            conn.close()
+            logger.debug(f"SQLite kullanıcı oluşturuldu: {user_id}")
+            return str(user_id)
     except Exception as e:
         logger.error(f"Kullanıcı oluşturma hatası: {e}")
         return None
 
 def get_user_by_username(username):
     try:
-        users_ref = get_users_collection()
-        if not users_ref:
-            return None
+        if FIREBASE_ENABLED:
+            users_ref = get_users_collection()
+            if not users_ref:
+                return None
+                
+            query = users_ref.where('username', '==', username).limit(1)
+            results = query.stream()
             
-        query = users_ref.where('username', '==', username).limit(1)
-        results = query.stream()
-        
-        for doc in results:
-            user_data = doc.to_dict()
-            user_data['id'] = doc.id
-            return user_data
-        
-        return None
+            for doc in results:
+                user_data = doc.to_dict()
+                user_data['id'] = doc.id
+                return user_data
+            
+            return None
+        else:
+            # SQLite fallback
+            conn = sqlite3.connect('depo_takip.db')
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
+            row = cursor.fetchone()
+            conn.close()
+            
+            if row:
+                return {
+                    'id': str(row[0]),
+                    'username': row[1],
+                    'password': row[2],
+                    'role': row[3],
+                    'isletme': row[4],
+                    'created_at': row[5]
+                }
+            return None
     except Exception as e:
         logger.error(f"Kullanıcı arama hatası: {e}")
         return None
 
 def create_product(data):
     try:
-        products_ref = get_products_collection()
-        if not products_ref:
-            return None
+        if FIREBASE_ENABLED:
+            products_ref = get_products_collection()
+            if not products_ref:
+                return None
+                
+            product_data = {
+                'isletme': data.get('isletme'),
+                'model_no': data.get('model_no'),
+                'seri_no': data.get('seri_no'),
+                'jira_no': data.get('jira_no'),
+                'gorsel_path': data.get('gorsel_path'),
+                'gonderim_tarihi': firestore.SERVER_TIMESTAMP,
+                'durum': data.get('durum', 'Yolda'),
+                'teslim_alan': data.get('teslim_alan'),
+                'teslim_alma_tarihi': data.get('teslim_alma_tarihi'),
+                'laboratuvarlar': data.get('laboratuvarlar'),
+                'aciklama': data.get('aciklama'),
+                'urun_tipi': data.get('urun_tipi'),
+                'created_at': firestore.SERVER_TIMESTAMP
+            }
             
-        product_data = {
-            'isletme': data.get('isletme'),
-            'model_no': data.get('model_no'),
-            'seri_no': data.get('seri_no'),
-            'jira_no': data.get('jira_no'),
-            'gorsel_path': data.get('gorsel_path'),
-            'gonderim_tarihi': firestore.SERVER_TIMESTAMP,
-            'durum': data.get('durum', 'Yolda'),
-            'teslim_alan': data.get('teslim_alan'),
-            'teslim_alma_tarihi': data.get('teslim_alma_tarihi'),
-            'laboratuvarlar': data.get('laboratuvarlar'),
-            'aciklama': data.get('aciklama'),
-            'urun_tipi': data.get('urun_tipi'),
-            'created_at': firestore.SERVER_TIMESTAMP
-        }
-        
-        doc_ref = products_ref.add(product_data)
-        logger.debug(f"Ürün oluşturuldu: {doc_ref[1].id}")
-        return doc_ref[1].id
+            doc_ref = products_ref.add(product_data)
+            logger.debug(f"Ürün oluşturuldu: {doc_ref[1].id}")
+            return doc_ref[1].id
+        else:
+            # SQLite fallback
+            conn = sqlite3.connect('depo_takip.db')
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO products (isletme, model_no, seri_no, jira_no, gorsel_path, 
+                                    durum, teslim_alan, teslim_alma_tarihi, laboratuvarlar, aciklama)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                data.get('isletme'),
+                data.get('model_no'),
+                data.get('seri_no'),
+                data.get('jira_no'),
+                data.get('gorsel_path'),
+                data.get('durum', 'Yolda'),
+                data.get('teslim_alan'),
+                data.get('teslim_alma_tarihi'),
+                data.get('laboratuvarlar'),
+                data.get('aciklama')
+            ))
+            product_id = cursor.lastrowid
+            conn.commit()
+            conn.close()
+            logger.debug(f"SQLite ürün oluşturuldu: {product_id}")
+            return str(product_id)
     except Exception as e:
         logger.error(f"Ürün oluşturma hatası: {e}")
         return None
 
 def get_all_products():
     try:
-        products_ref = get_products_collection()
-        if not products_ref:
-            return []
+        if FIREBASE_ENABLED:
+            products_ref = get_products_collection()
+            if not products_ref:
+                return []
+                
+            query = products_ref.order_by('created_at', direction=firestore.Query.DESCENDING)
+            results = query.stream()
             
-        query = products_ref.order_by('created_at', direction=firestore.Query.DESCENDING)
-        results = query.stream()
-        
-        products = []
-        for doc in results:
-            product_data = doc.to_dict()
-            product_data['id'] = doc.id
+            products = []
+            for doc in results:
+                product_data = doc.to_dict()
+                product_data['id'] = doc.id
+                
+                # Laboratuvar durumlarını getir
+                lab_status = get_laboratory_status_for_product(doc.id)
+                product_data['laboratuvar_durumlari'] = lab_status
+                
+                products.append(product_data)
             
-            # Laboratuvar durumlarını getir
-            lab_status = get_laboratory_status_for_product(doc.id)
-            product_data['laboratuvar_durumlari'] = lab_status
+            return products
+        else:
+            # SQLite fallback
+            conn = sqlite3.connect('depo_takip.db')
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM products ORDER BY created_at DESC')
+            rows = cursor.fetchall()
+            conn.close()
             
-            products.append(product_data)
-        
-        return products
+            products = []
+            for row in rows:
+                product_data = {
+                    'id': str(row[0]),
+                    'isletme': row[1],
+                    'model_no': row[2],
+                    'seri_no': row[3],
+                    'jira_no': row[4],
+                    'gorsel_path': row[5],
+                    'durum': row[6],
+                    'teslim_alan': row[7],
+                    'teslim_alma_tarihi': row[8],
+                    'laboratuvarlar': row[9],
+                    'aciklama': row[10],
+                    'created_at': row[11],
+                    'updated_at': row[12]
+                }
+                
+                # Laboratuvar durumlarını getir
+                lab_status = get_laboratory_status_for_product(str(row[0]))
+                product_data['laboratuvar_durumlari'] = lab_status
+                
+                products.append(product_data)
+            
+            return products
     except Exception as e:
         logger.error(f"Ürün listesi alma hatası: {e}")
         return []
@@ -239,66 +414,141 @@ def get_product_by_id(product_id):
 
 def create_laboratory_status(product_id, laboratuvar, durum=None):
     try:
-        lab_status_ref = get_laboratory_status_collection()
-        if not lab_status_ref:
-            return None
+        if FIREBASE_ENABLED:
+            lab_status_ref = get_laboratory_status_collection()
+            if not lab_status_ref:
+                return None
+                
+            status_data = {
+                'product_id': product_id,
+                'laboratuvar': laboratuvar,
+                'durum': durum,
+                'hurda_tarihi': None,
+                'hurda_aciklama': None,
+                'created_at': firestore.SERVER_TIMESTAMP
+            }
             
-        status_data = {
-            'product_id': product_id,
-            'laboratuvar': laboratuvar,
-            'durum': durum,
-            'hurda_tarihi': None,
-            'hurda_aciklama': None,
-            'created_at': firestore.SERVER_TIMESTAMP
-        }
-        
-        doc_ref = lab_status_ref.add(status_data)
-        logger.debug(f"Laboratuvar durumu oluşturuldu: {doc_ref[1].id}")
-        return doc_ref[1].id
+            doc_ref = lab_status_ref.add(status_data)
+            logger.debug(f"Laboratuvar durumu oluşturuldu: {doc_ref[1].id}")
+            return doc_ref[1].id
+        else:
+            # SQLite fallback
+            conn = sqlite3.connect('depo_takip.db')
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO laboratory_status (product_id, laboratuvar, durum)
+                VALUES (?, ?, ?)
+            ''', (product_id, laboratuvar, durum))
+            status_id = cursor.lastrowid
+            conn.commit()
+            conn.close()
+            logger.debug(f"SQLite laboratuvar durumu oluşturuldu: {status_id}")
+            return str(status_id)
     except Exception as e:
         logger.error(f"Laboratuvar durumu oluşturma hatası: {e}")
         return None
 
 def get_laboratory_status_for_product(product_id):
     try:
-        lab_status_ref = get_laboratory_status_collection()
-        if not lab_status_ref:
-            return []
+        if FIREBASE_ENABLED:
+            lab_status_ref = get_laboratory_status_collection()
+            if not lab_status_ref:
+                return []
+                
+            query = lab_status_ref.where('product_id', '==', product_id)
+            results = query.stream()
             
-        query = lab_status_ref.where('product_id', '==', product_id)
-        results = query.stream()
-        
-        statuses = []
-        for doc in results:
-            status_data = doc.to_dict()
-            status_data['id'] = doc.id
-            statuses.append(status_data)
-        
-        return statuses
+            statuses = []
+            for doc in results:
+                status_data = doc.to_dict()
+                status_data['id'] = doc.id
+                statuses.append(status_data)
+            
+            return statuses
+        else:
+            # SQLite fallback
+            conn = sqlite3.connect('depo_takip.db')
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM laboratory_status WHERE product_id = ?', (product_id,))
+            rows = cursor.fetchall()
+            conn.close()
+            
+            statuses = []
+            for row in rows:
+                status_data = {
+                    'id': str(row[0]),
+                    'product_id': row[1],
+                    'laboratuvar': row[2],
+                    'durum': row[3],
+                    'hurda_tarihi': row[4],
+                    'hurda_aciklama': row[5],
+                    'durum_notu': row[6],
+                    'created_at': row[7],
+                    'updated_at': row[8]
+                }
+                statuses.append(status_data)
+            
+            return statuses
     except Exception as e:
         logger.error(f"Laboratuvar durumu getirme hatası: {e}")
         return []
 
 def create_log_entry(user_id, username, action, product_id=None, details=None):
     try:
-        logs_ref = get_logs_collection()
-        if not logs_ref:
-            return None
+        if FIREBASE_ENABLED:
+            logs_ref = get_logs_collection()
+            if not logs_ref:
+                return None
+                
+            log_data = {
+                'user_id': user_id,
+                'username': username,
+                'action': action,
+                'product_id': product_id,
+                'details': details,
+                'timestamp': firestore.SERVER_TIMESTAMP
+            }
             
-        log_data = {
-            'user_id': user_id,
-            'username': username,
-            'action': action,
-            'product_id': product_id,
-            'details': details,
-            'timestamp': firestore.SERVER_TIMESTAMP
-        }
-        
-        doc_ref = logs_ref.add(log_data)
-        logger.debug(f"Log kaydı oluşturuldu: {doc_ref[1].id}")
-        return doc_ref[1].id
+            doc_ref = logs_ref.add(log_data)
+            logger.debug(f"Log kaydı oluşturuldu: {doc_ref[1].id}")
+            return doc_ref[1].id
+        else:
+            # SQLite fallback
+            conn = sqlite3.connect('depo_takip.db')
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO logs (user_id, username, action, product_id, details)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (user_id, username, action, product_id, details))
+            log_id = cursor.lastrowid
+            conn.commit()
+            conn.close()
+            logger.debug(f"SQLite log kaydı oluşturuldu: {log_id}")
+            return str(log_id)
     except Exception as e:
         logger.error(f"Log kaydı oluşturma hatası: {e}")
+        return None
+
+def upload_image_to_gcs(file, filename):
+    """Görseli Google Cloud Storage'a yükle"""
+    try:
+        if not GCS_ENABLED or not gcs_client:
+            logger.error("Google Cloud Storage aktif değil")
+            return None
+            
+        bucket = gcs_client.bucket(app.config['GCS_BUCKET_NAME'])
+        blob = bucket.blob(f'images/{filename}')
+        
+        # Dosyayı yükle
+        blob.upload_from_file(file, content_type=file.content_type)
+        
+        # Public URL'i döndür
+        public_url = f"https://storage.googleapis.com/{app.config['GCS_BUCKET_NAME']}/images/{filename}"
+        logger.debug(f"Görsel Cloud Storage'a yüklendi: {public_url}")
+        return public_url
+        
+    except Exception as e:
+        logger.error(f"Cloud Storage'a yükleme hatası: {e}")
         return None
 
 def create_default_users():
@@ -461,9 +711,16 @@ def urun_ekle():
                 filename = secure_filename(file.filename)
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
                 filename = timestamp + filename
-                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(file_path)
-                gorsel_path = f'static/images/{filename}'
+                
+                # Cloud Storage'a yükle
+                file.seek(0)  # Dosya pointer'ını başa al
+                gorsel_path = upload_image_to_gcs(file, filename)
+                
+                if not gorsel_path:
+                    # Fallback: Local'e kaydet
+                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    file.save(file_path)
+                    gorsel_path = f'static/images/{filename}'
 
         logger.debug(f"[DEBUG] Kullanılacak görsel: {gorsel_path}")
 
@@ -559,9 +816,11 @@ def urun_detay(product_id):
         try:
             logs_ref = get_logs_collection()
             if logs_ref:
-                query = logs_ref.where('product_id', '==', product_id).order_by('timestamp', direction=firestore.Query.DESCENDING)
+                # Önce product_id ile filtreleme yap, sonra timestamp'e göre sırala
+                query = logs_ref.where('product_id', '==', product_id)
                 results = query.stream()
                 
+                temp_logs = []
                 for doc in results:
                     log_data = doc.to_dict()
                     log_data['id'] = doc.id
@@ -578,7 +837,11 @@ def urun_detay(product_id):
                     else:
                         log_data['timestamp'] = datetime.now()
                     
-                    urun_log_kayitlari.append(log_data)
+                    temp_logs.append(log_data)
+                
+                # Python'da timestamp'e göre sırala (en yeni en üstte)
+                urun_log_kayitlari = sorted(temp_logs, key=lambda x: x['timestamp'], reverse=True)
+                
         except Exception as e:
             logger.error(f'Ürün log kayıtları getirme hatası: {str(e)}')
         
@@ -609,10 +872,52 @@ def urun_duzenle(product_id):
                     'updated_at': firestore.SERVER_TIMESTAMP
                 }
                 
+                # Görsel yükleme işlemi
+                if 'gorsel' in request.files:
+                    file = request.files['gorsel']
+                    if file and file.filename != '':
+                        filename = secure_filename(file.filename)
+                        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
+                        filename = timestamp + filename
+                        
+                        # Cloud Storage'a yükle
+                        file.seek(0)  # Dosya pointer'ını başa al
+                        gorsel_path = upload_image_to_gcs(file, filename)
+                        
+                        if gorsel_path:
+                            update_data['gorsel_path'] = gorsel_path
+                            logger.debug(f"[DEBUG] Yeni görsel Cloud Storage'a yüklendi: {gorsel_path}")
+                        else:
+                            # Fallback: Local'e kaydet
+                            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                            file.save(file_path)
+                            update_data['gorsel_path'] = f'static/images/{filename}'
+                            logger.debug(f"[DEBUG] Yeni görsel local'e yüklendi: {update_data['gorsel_path']}")
+                    else:
+                        logger.debug("[DEBUG] Görsel dosyası seçilmedi, mevcut görsel korunuyor")
+                
                 # Teslim alma tarihi
                 teslim_tarihi = request.form.get('teslim_alma_tarihi')
                 if teslim_tarihi:
                     update_data['teslim_alma_tarihi'] = teslim_tarihi
+                
+                # Yeni laboratuvar atamaları
+                laboratuvarlar_list = request.form.getlist('laboratuvarlar')
+                if laboratuvarlar_list:
+                    update_data['laboratuvarlar'] = ','.join(laboratuvarlar_list)
+                    
+                    # Mevcut laboratuvar durumlarını sil
+                    lab_status_ref = get_laboratory_status_collection()
+                    if lab_status_ref:
+                        existing_labs = lab_status_ref.where('product_id', '==', product_id).stream()
+                        for lab_doc in existing_labs:
+                            lab_doc.reference.delete()
+                    
+                    # Yeni laboratuvar durumları oluştur
+                    for lab in laboratuvarlar_list:
+                        create_laboratory_status(product_id, lab, 'Yolda')
+                    
+                    logger.info(f"Ürün {product_id} için laboratuvarlar güncellendi: {laboratuvarlar_list}")
                 
                 doc_ref.update(update_data)
                 
@@ -778,13 +1083,13 @@ def update_product_status_based_on_labs(product_id):
         
         # Durum öncelik sırası: Hurda > Transfer Edildi > Laboratuvarda > Bekleme Alanında > Yolda
         durum_oncelik = {
-            'Hurda': 5,
-            'Transfer Edildi': 4,
-            'Laboratuvarda': 3,
-            'Bekleme Alanında': 2,
-            'Bekleme Alanı': 2,  # Aynı öncelik
-            'Yolda': 1,
-            'Ürün Bekleniyor': 0
+            'Hurda': 6,
+            'Transfer Edildi': 5,
+            'Laboratuvarda': 4,
+            'Bekleme Alanında': 3,
+            'Bekleme Alanı': 3,  # Aynı öncelik
+            'Ürün Bekleniyor': 2,
+            'Yolda': 1
         }
         
         # En yüksek öncelikli durumu bul
@@ -843,7 +1148,8 @@ def laboratuvar_durum_guncelle(status_id):
             if current_status.exists:
                 current_data = current_status.to_dict()
                 product_id = current_data.get('product_id')
-                logger.debug(f"[DEBUG] Mevcut durum: {current_data.get('durum')} -> Yeni durum: {yeni_durum}")
+                eski_durum = current_data.get('durum')
+                logger.debug(f"[DEBUG] Mevcut durum: {eski_durum} -> Yeni durum: {yeni_durum}")
                 logger.debug(f"[DEBUG] Product ID: {product_id}")
             else:
                 logger.error(f"[ERROR] Laboratuvar durumu bulunamadı: {status_id}")
@@ -864,6 +1170,30 @@ def laboratuvar_durum_guncelle(status_id):
             
             doc_ref.update(update_data)
             logger.debug(f"[DEBUG] Laboratuvar durumu güncellendi: {update_data}")
+            
+            # Özel mantık: Bekleme Alanından Laboratuvarda'ya geçişte diğer laboratuvarları "Ürün Bekleniyor" yap
+            if eski_durum in ['Bekleme Alanı', 'Bekleme Alanında'] and yeni_durum == 'Laboratuvarda' and product_id:
+                logger.debug(f"[DEBUG] Bekleme alanından laboratuvarda'ya geçiş tespit edildi. Diğer laboratuvarlar 'Ürün Bekleniyor' yapılıyor...")
+                
+                # Aynı ürünün diğer laboratuvarlarını bul ve "Ürün Bekleniyor" yap
+                query = lab_status_ref.where('product_id', '==', product_id)
+                other_lab_statuses = query.stream()
+                
+                updated_count = 0
+                for other_lab_status in other_lab_statuses:
+                    other_lab_data = other_lab_status.to_dict()
+                    other_lab_id = other_lab_status.id
+                    
+                    # Şu an güncellenen laboratuvar hariç, diğerlerini "Ürün Bekleniyor" yap
+                    if other_lab_id != status_id and other_lab_data.get('durum') in ['Bekleme Alanı', 'Bekleme Alanında']:
+                        other_lab_status.reference.update({
+                            'durum': 'Ürün Bekleniyor',
+                            'updated_at': firestore.SERVER_TIMESTAMP
+                        })
+                        updated_count += 1
+                        logger.debug(f"[DEBUG] {other_lab_data.get('laboratuvar')} laboratuvarı 'Ürün Bekleniyor' yapıldı")
+                
+                logger.debug(f"[DEBUG] {updated_count} laboratuvar 'Ürün Bekleniyor' durumuna güncellendi")
             
             # Ana ürün durumunu laboratuvar durumlarına göre güncelle
             if product_id:
@@ -1002,9 +1332,62 @@ def hurda_et(urun_id):
         flash('Ürün hurda edilirken bir hata oluştu!', 'error')
         return redirect(url_for('index'))
 
+@app.route('/urun_sil/<urun_id>', methods=['POST'])
+@admin_required
+def urun_sil(urun_id):
+    try:
+        logger.debug(f"[DEBUG] Ürün silme işlemi başladı: urun_id={urun_id}")
+        
+        # Önce ürün bilgilerini al (log için)
+        product = get_product_by_id(urun_id)
+        if not product:
+            flash('Ürün bulunamadı!', 'error')
+            return redirect(url_for('index'))
+        
+        # Laboratuvar durumlarını sil
+        lab_status_ref = get_laboratory_status_collection()
+        if lab_status_ref:
+            query = lab_status_ref.where('product_id', '==', urun_id)
+            lab_statuses = query.stream()
+            
+            deleted_lab_count = 0
+            for lab_status in lab_statuses:
+                lab_status.reference.delete()
+                deleted_lab_count += 1
+            
+            logger.debug(f"[DEBUG] {deleted_lab_count} laboratuvar durumu silindi")
+        
+        # Ürünü sil
+        products_ref = get_products_collection()
+        if products_ref:
+            doc_ref = products_ref.document(urun_id)
+            doc_ref.delete()
+            logger.debug(f"[DEBUG] Ürün silindi: {urun_id}")
+            
+            # Log kaydı
+            create_log_entry(
+                session['user_id'],
+                session['username'],
+                'Ürün Silindi',
+                urun_id,
+                f'Ürün bilgileri: Stok No: {product.get("model_no", "")}, Seri No: {product.get("seri_no", "")}, Jira No: {product.get("jira_no", "")} - {deleted_lab_count} laboratuvar durumu da silindi'
+            )
+            
+            flash('Ürün başarıyla silindi!', 'success')
+        else:
+            logger.error("[ERROR] Products collection bulunamadı")
+            flash('Veritabanı bağlantı hatası!', 'error')
+        
+        return redirect(url_for('index'))
+        
+    except Exception as e:
+        logger.error(f'Ürün silme hatası: {str(e)}')
+        flash('Ürün silinirken bir hata oluştu!', 'error')
+        return redirect(url_for('index'))
+
 if __name__ == '__main__':
-    if FIREBASE_ENABLED:
-        create_default_users()
+    # Firebase olsun ya da olmasın varsayılan kullanıcıları oluştur
+    create_default_users()
     
     import os
     port = int(os.environ.get('PORT', 5003))

@@ -17,7 +17,19 @@
             <option value="admin">Admin</option>
         </select><br>
         <label>İşletme (isteğe bağlı):</label><br>
-        <input type="text" name="isletme"><br><br>
+        <select name="isletme">
+            <option value="">İşletme seçiniz</option>
+            <option value="Pişirici Cihazlar İşletmesi">Pişirici Cihazlar İşletmesi</option>
+            <option value="Buzdolabı İşletmesi">Buzdolabı İşletmesi</option>
+            <option value="Temin Ürün Direktörlüğü">Temin Ürün Direktörlüğü</option>
+            <option value="Bulaşık Makinesi İşletmesi">Bulaşık Makinesi İşletmesi</option>
+            <option value="Çamaşır Makinesi İşletmesi">Çamaşır Makinesi İşletmesi</option>
+            <option value="Kurutucu İşletmesi">Kurutucu İşletmesi</option>
+            <option value="Küçük Ev Aletleri İşletmesi">Küçük Ev Aletleri İşletmesi</option>
+            <option value="Beko Wuxi R&D">Beko Wuxi R&D</option>
+            <option value="Hitachi">Hitachi</option>
+            <option value="Dawlance">Dawlance</option>
+        </select><br><br>
         <button type="submit">Kayıt Ol</button>
     </form>
     <a href="{{ url_for('login') }}">Giriş Yap</a>

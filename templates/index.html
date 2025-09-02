@@ -464,11 +464,11 @@
             .filter-status-group { flex-wrap: wrap; justify-content: flex-start; }
         }
         .lab-badge, .lab-badge-flex {
-            font-size: 0.77em;
-            padding: 3px 7px;
-            border-radius: 8px;
-            min-width: 80px;
-            max-width: 110px;
+            font-size: 0.7em;
+            padding: 2px 6px;
+            border-radius: 6px;
+            min-width: 60px;
+            max-width: 90px;
             white-space: nowrap;
             text-align: center;
             display: inline-block;
@@ -492,6 +492,55 @@
           .lab-badge, .lab-badge-flex, .lab-select-flex { width: 100%; min-width: 0; max-width: 100%; margin-bottom: 2px; }
         }
         .card-info-sm { font-size: 0.97rem; margin-bottom: 0.1rem; line-height: 1.2; }
+        
+        /* Profesyonel Status Badge Stilleri */
+        .status-badge-pro {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            min-width: 140px;
+        }
+        
+        .status-badge-pro:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+        }
+        
+        .status-hurda {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: #ffffff;
+            border-color: #c0392b;
+        }
+        
+        .status-lab {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: #ffffff;
+            border-color: #2980b9;
+        }
+        
+        .status-bekleme {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            color: #ffffff;
+            border-color: #e67e22;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        @media (max-width: 768px) {
+            .status-badge-pro {
+                font-size: 0.75rem;
+                padding: 6px 12px;
+                min-width: 120px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -571,9 +620,8 @@
                             <button type="submit" name="durum" value="" class="filter-status-btn tumu {% if not request.args.get('durum') %}selected{% endif %}"><i class="fas fa-list"></i> Tümü</button>
                             <button type="submit" name="durum" value="Yolda" class="filter-status-btn yolda {% if request.args.get('durum') == 'Yolda' %}selected{% endif %}"><i class="fas fa-truck"></i> Yolda</button>
                             <button type="submit" name="durum" value="Bekleme Alanında" class="filter-status-btn bekleme {% if request.args.get('durum') == 'Bekleme Alanında' %}selected{% endif %}"><i class="fas fa-warehouse"></i> Bekleme Alanında</button>
+
                             <button type="submit" name="durum" value="Hurda" class="filter-status-btn hurda {% if request.args.get('durum') == 'Hurda' %}selected{% endif %}"><i class="fas fa-trash-alt"></i> Hurda</button>
-                            <button type="submit" name="durum" value="Geri İade" class="filter-status-btn iade {% if request.args.get('durum') == 'Geri İade' %}selected{% endif %}"><i class="fas fa-undo"></i> Geri İade</button>
-                            <button type="submit" name="durum" value="Laboratuvarda" class="filter-status-btn bekleme {% if request.args.get('durum') == 'Laboratuvarda' %}selected{% endif %}"><i class="fas fa-flask"></i> Laboratuvarda</button>
                         </div>
                     </div>
                     <div class="col-12 text-end mt-2 mt-md-0">
@@ -603,24 +651,32 @@
                         <div class="product-image-wrapper {% if urun.durum == 'Hurda' %}hurda{% elif urun.durum == 'Bekleme Alanında' %}bekleme{% elif urun.durum == 'Yolda' %}yolda{% endif %}">
                             <div class="text-center mt-3">
                                 {% if urun.durum == 'Hurda' %}
-                                    <span class="badge bg-danger fs-5 px-4 py-2">Hurda</span>
-                                {% elif urun.durum == 'Transfer Edildi' %}
-                                    <span class="badge bg-success fs-5 px-4 py-2">Transfer Edildi</span>
+                                    <span class="status-badge-pro status-hurda">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>HURDA
+                                    </span>
                                 {% elif urun.durum == 'Laboratuvarda' %}
-                                    <span class="badge bg-info text-white fs-5 px-4 py-2">Laboratuvarda</span>
+                                    <span class="status-badge-pro status-lab">
+                                        <i class="fas fa-flask me-2"></i>LABORATUVARDA
+                                    </span>
                                 {% elif urun.durum == 'Bekleme Alanında' %}
-                                    <span class="badge bg-warning text-dark fs-5 px-4 py-2">Bekleme Alanında</span>
-                                {% elif urun.durum == 'Yolda' %}
-                                    <span class="badge bg-secondary text-white fs-5 px-4 py-2">Yolda</span>
+                                    <span class="status-badge-pro status-bekleme">
+                                        <i class="fas fa-clock me-2"></i>BEKLEME ALANI
+                                    </span>
                                 {% endif %}
                             </div>
-                            <img src="{{ url_for('static', filename=urun.gorsel_path.replace('static/', '')) if urun.gorsel_path else url_for('static', filename='images/owl-logo.png') }}"
-                                alt="Ürün Görseli"
-                                onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/owl-logo.png') }}';">
+                            {% if urun.gorsel_path and urun.gorsel_path.startswith('https://') %}
+                                <img src="{{ urun.gorsel_path }}"
+                                    alt="Ürün Görseli"
+                                    onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/owl-logo.png') }}';">
+                            {% else %}
+                                <img src="{{ url_for('static', filename=urun.gorsel_path.replace('static/', '')) if urun.gorsel_path else url_for('static', filename='images/owl-logo.png') }}"
+                                    alt="Ürün Görseli"
+                                    onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/owl-logo.png') }}';">
+                            {% endif %}>
                             <span class="corner-icon"><i class="fas fa-image"></i></span>
                         </div>
                         <div class="card-body text-center pt-2 pb-1">
-                            <h6 class="card-title mb-2" style="font-size:1.08rem; font-weight:700; color:#0d47a1;">{{ urun.model_no if urun.model_no else 'Belirtilmemiş' }}</h6>
+                            <h6 class="card-title mb-2" style="font-size:1.08rem; font-weight:700; color:#0d47a1;">{{ urun.seri_no if urun.seri_no else 'Belirtilmemiş' }}</h6>
                         <div class="card-info-sm mb-1"><span class="fw-bold">İşletme:</span> {{ urun.isletme if urun.isletme else 'Belirtilmemiş' }}</div>
                         <div class="card-info-sm"><span class="fw-bold">Jira No:</span> 
                             {% if urun.jira_no %}
@@ -631,42 +687,51 @@
                         </div>
                             <div class="card-info-sm mt-1">
                                 <span class="fw-bold">Durum:</span>
-                                {% if urun.durum == 'Laboratuvarda' %}
-                                    Ürün Laboratuvarda
-                                {% elif urun.durum == 'Yolda' %}
-                                    Yolda
-                                {% elif urun.durum == 'Hurda' %}
+                                {% if urun.durum == 'Hurda' %}
                                     Hurda
+                                {% elif urun.durum == 'Laboratuvarda' %}
+                                    Laboratuvarda
                                 {% elif urun.durum == 'Bekleme Alanında' %}
-                                    Bekleme Alanında
+                                    Bekleme Alanı
                                 {% endif %}
                             </div>
+                            {% if urun.aciklama %}
+                            <div class="card-info-sm mt-2">
+                                <div class="alert alert-info p-2 m-0" style="font-size: 0.85rem;">
+                                    <i class="fas fa-sticky-note me-1"></i>
+                                    <strong>Not:</strong> {{ urun.aciklama }}
+                                </div>
+                            </div>
+                            {% endif %}
                         </div>
                     </a>
                     <div class="card-footer bg-transparent border-top">
                         <h6 class="card-subtitle mb-2 text-muted"><i class="fas fa-flask me-1"></i> Atanan Laboratuvarlar:</h6>
                         <div class="list-group list-group-flush">
                             {% for lab_durum in urun.laboratuvar_durumlari %}
-                                <div class="list-group-item lab-row-flex p-2">
+                                <div class="list-group-item lab-row-flex p-2 d-flex justify-content-between align-items-center">
                                     <span class="fw-bold">{{ lab_durum.laboratuvar }}</span>
-                                    <span class="lab-badge lab-badge-flex ms-2
+                                    <span class="lab-badge lab-badge-flex clickable-badge
                                         {% if lab_durum.durum == 'Hurda' %}bg-danger text-white
-                                        {% elif lab_durum.durum == 'Transfer Edildi' %}bg-success text-white
                                         {% elif lab_durum.durum == 'Laboratuvarda' %}bg-info text-white
                                         {% elif lab_durum.durum in ['Bekleme Alanı', 'Bekleme Alanında'] %}bg-warning text-dark
+                                        {% elif lab_durum.durum == 'Transfer Edildi' %}bg-success text-white
+                                        {% elif lab_durum.durum == 'Ürün Bekleniyor' %}bg-primary text-white
                                         {% elif lab_durum.durum == 'Yolda' %}bg-secondary text-white
-                                        {% else %}bg-light text-dark
-                                        {% endif %}">
-                                        {{ 'Lab.' if lab_durum.durum == 'Laboratuvarda' else (lab_durum.durum[:10] ~ ('...' if lab_durum.durum|length > 10 else '')) if lab_durum.durum else 'Durum Yok' }}
+                                        {% else %}bg-light text-dark d-none
+                                        {% endif %}"
+                                        style="cursor: pointer; font-size: 0.75rem; padding: 2px 6px;"
+                                        onclick="showStatusChangeModal('{{ lab_durum.id }}', '{{ lab_durum.laboratuvar }}', '{{ lab_durum.durum }}')"
+                                        title="Durumu değiştirmek için tıklayın">
+                                        {% if lab_durum.durum == 'Hurda' %}Hurda
+                                        {% elif lab_durum.durum == 'Laboratuvarda' %}Laboratuvarda
+                                        {% elif lab_durum.durum in ['Bekleme Alanı', 'Bekleme Alanında'] %}Bekleme Alanı
+                                        {% elif lab_durum.durum == 'Transfer Edildi' %}Transfer Edildi
+                                        {% elif lab_durum.durum == 'Ürün Bekleniyor' %}Ürün Bekleniyor
+                                        {% elif lab_durum.durum == 'Yolda' %}Yolda
+                                        {% endif %}
+                                        {% if lab_durum.durum in ['Hurda', 'Laboratuvarda', 'Bekleme Alanı', 'Bekleme Alanında', 'Transfer Edildi', 'Ürün Bekleniyor', 'Yolda'] %}<i class="fas fa-edit ms-1"></i>{% endif %}
                                     </span>
-                                    <select class="form-select form-select-sm lab-select-flex ms-2" onchange="updateLaboratuvarDurum({{ lab_durum.id }}, this.value)">
-                                        <option value="Hurda" {% if lab_durum.durum == 'Hurda' %}selected{% endif %}>Hurda</option>
-                                        <option value="Bekleme Alanında" {% if lab_durum.durum == 'Bekleme Alanı' or lab_durum.durum == 'Bekleme Alanında' %}selected{% endif %}>Bekleme Alanı</option>
-                                        <option value="Laboratuvarda" {% if lab_durum.durum == 'Laboratuvarda' %}selected{% endif %}>Lab.</option>
-                                        <option value="Transfer Edildi" {% if lab_durum.durum == 'Transfer Edildi' %}selected{% endif %}>Transfer...</option>
-                                        <option value="Yolda" {% if lab_durum.durum == 'Yolda' %}selected{% endif %}>Yolda</option>
-                                        <option value="Ürün Bekleniyor" {% if lab_durum.durum == 'Ürün Bekleniyor' %}selected{% endif %}>Bekleniyor</option>
-                                    </select>
                                 </div>
                             {% else %}
                                 <p class="text-muted">Laboratuvar atanmamış.</p>
@@ -746,15 +811,9 @@
                             <label for="isletme" class="form-label">İşletme</label>
                             <select class="form-select" id="isletme" name="isletme" required>
                                 <option value="" disabled selected>İşletme seçiniz</option>
-                                <option value="Pişirici Cihazlar İşletmesi">Pişirici Cihazlar İşletmesi</option>
-                                <option value="Buzdolabı İşletmesi">Buzdolabı İşletmesi</option>
-                                <option value="Temin Ürün Direktörlüğü">Temin Ürün Direktörlüğü</option>
-                                <option value="Bulaşık Makinesi İşletmesi">Bulaşık Makinesi İşletmesi</option>
-                                <option value="Kurutucu İşletmesi">Kurutucu İşletmesi</option>
-                                <option value="Küçük Ev Aletleri İşletmesi">Küçük Ev Aletleri İşletmesi</option>
-                                <option value="Beko Wuxi R&D">Beko Wuxi R&D</option>
-                                <option value="Hitachi">Hitachi</option>
-                                <option value="Dawlance">Dawlance</option>
+                                {% for isletme_item in isletmeler %}
+                                <option value="{{ isletme_item }}">{{ isletme_item }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         <div class="mb-3">
@@ -828,6 +887,48 @@
         </div>
     </div>
 
+    <!-- Laboratuvar Durum Değiştirme Modal -->
+    <div class="modal fade" id="statusChangeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-flask me-2"></i>Laboratuvar Durumu Değiştir</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <strong>Laboratuvar:</strong> <span id="modalLabName"></span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Mevcut Durum:</strong> <span id="modalCurrentStatus"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newStatus" class="form-label">Yeni Durum</label>
+                        <select class="form-select" id="newStatus" required>
+                            <option value="">Durum Seçin</option>
+                            <option value="Yolda">Yolda</option>
+                            <option value="Bekleme Alanında">Bekleme Alanında</option>
+                            <option value="Laboratuvarda">Laboratuvarda</option>
+                            <option value="Transfer Edildi">Transfer Edildi</option>
+                            <option value="Ürün Bekleniyor">Ürün Bekleniyor</option>
+                            {% if session.get('role') == 'admin' %}
+                            <option value="Hurda">Hurda</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="statusNote" class="form-label">Açıklama (Opsiyonel)</label>
+                        <textarea class="form-control" id="statusNote" rows="2" placeholder="Durum değişikliği hakkında not..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmStatusChange()">Durumu Güncelle</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Firebase Uygulama Fonksiyonları -->
     <script src="{{ url_for('static', filename='js/firebase-app.js') }}"></script>
@@ -883,6 +984,80 @@
                 console.error('Ürün ekleme hatası:', error);
                 return { success: false, error: error.message };
             }
+        }
+
+        // Global değişkenler laboratuvar durum değişikliği için
+        let currentLabId = '';
+        let currentLabName = '';
+        let currentStatus = '';
+
+        // Modal açma fonksiyonu
+        function showStatusChangeModal(labId, labName, currentStat) {
+            currentLabId = labId;
+            currentLabName = labName;
+            currentStatus = currentStat;
+            
+            document.getElementById('modalLabName').textContent = labName;
+            document.getElementById('modalCurrentStatus').textContent = currentStat;
+            
+            // Mevcut durumu select'ten kaldır
+            const newStatusSelect = document.getElementById('newStatus');
+            const options = newStatusSelect.querySelectorAll('option');
+            options.forEach(option => {
+                option.disabled = (option.value === currentStat);
+            });
+            
+            // Modal'ı aç
+            const modal = new bootstrap.Modal(document.getElementById('statusChangeModal'));
+            modal.show();
+        }
+
+        // Durum değişikliğini onaylama
+        function confirmStatusChange() {
+            const newStatus = document.getElementById('newStatus').value;
+            const note = document.getElementById('statusNote').value;
+            
+            if (!newStatus) {
+                alert('Lütfen yeni durum seçin!');
+                return;
+            }
+            
+            if (newStatus === currentStatus) {
+                alert('Yeni durum mevcut durumla aynı olamaz!');
+                return;
+            }
+            
+            // Form data oluştur
+            const formData = new FormData();
+            formData.append('yeni_durum', newStatus);
+            if (note) {
+                formData.append('durum_notu', note);
+            }
+            
+            console.log('Laboratuvar durum güncelleniyor:', currentLabId, newStatus);
+            
+            // Flask backend'e gönder
+            fetch('/laboratuvar_durum_guncelle/' + currentLabId, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log('Durum başarıyla güncellendi');
+                    // Modal'ı kapat
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('statusChangeModal'));
+                    modal.hide();
+                    // Sayfayı yenile
+                    location.reload();
+                } else {
+                    console.error('Durum güncellenirken hata oluştu');
+                    alert('Durum güncellenemedi. Lütfen tekrar deneyin.');
+                }
+            })
+            .catch(error => {
+                console.error('Fetch hatası:', error);
+                alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+            });
         }
     </script>
 </body>

@@ -1,6 +1,5 @@
 {
   "hosting": {
-    "site": "testonaytakip",
     "public": "public",
     "ignore": [
       "firebase.json",
@@ -10,7 +9,7 @@
     "rewrites": [
       {
         "source": "**",
-        "destination": "https://depo-takip-90863126066.europe-west1.run.app"
+        "function": "proxy"
       }
     ]
   },

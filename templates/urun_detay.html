@@ -104,10 +104,17 @@
                     <div class="card-body">
                         {% if urun.gorsel_path %}
                         <div class="product-image-container">
-                            <img src="{{ url_for('static', filename=urun.gorsel_path.replace('static/', '')) }}" 
-                                 class="product-image" 
-                                 alt="{{ urun.model_no }}"
-                                 onerror="this.src='{{ url_for('static', filename='images/owl-logo.png') }}'">
+                            {% if urun.gorsel_path.startswith('https://') %}
+                                <img src="{{ urun.gorsel_path }}" 
+                                     class="product-image" 
+                                     alt="{{ urun.model_no }}"
+                                     onerror="this.src='{{ url_for('static', filename='images/owl-logo.png') }}'">
+                            {% else %}
+                                <img src="{{ url_for('static', filename=urun.gorsel_path.replace('static/', '')) }}" 
+                                     class="product-image" 
+                                     alt="{{ urun.model_no }}"
+                                     onerror="this.src='{{ url_for('static', filename='images/owl-logo.png') }}'">
+                            {% endif %}
                         </div>
                         {% else %}
                         <div class="product-image-container">
@@ -156,6 +163,14 @@
                                     {{ urun.teslim_alma_tarihi }}
                                 {% endif %}
                             </p>
+                        </div>
+                        {% endif %}
+                        {% if urun.aciklama %}
+                        <div class="mb-3">
+                            <h6><i class="fas fa-sticky-note me-2"></i>Açıklama:</h6>
+                            <div class="alert alert-info">
+                                <p class="mb-0">{{ urun.aciklama }}</p>
+                            </div>
                         </div>
                         {% endif %}
                     </div>
@@ -222,7 +237,9 @@
                     <button type="button" class="btn btn-primary btn-action me-2 mb-2" data-bs-toggle="modal" data-bs-target="#urunDuzenleModal">
                         <i class="fas fa-edit me-2"></i>Düzenle
                     </button>
-
+                    <button type="button" class="btn btn-outline-danger btn-action me-2 mb-2" data-bs-toggle="modal" data-bs-target="#urunSilModal">
+                        <i class="fas fa-trash-alt me-2"></i>Sil
+                    </button>
                     {% endif %}
                 </div>
             </div>
@@ -242,6 +259,42 @@
                                     <textarea class="form-control" id="hurda_aciklama" name="hurda_aciklama" rows="3" required></textarea>
                                 </div>
                                 <button type="submit" class="btn btn-danger">Onayla</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ürün Sil Modal -->
+            <div class="modal fade" id="urunSilModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title"><i class="fas fa-trash-alt me-2"></i>Ürünü Sil</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>DİKKAT!</strong> Bu işlem geri alınamaz. Ürün ve tüm laboratuvar durumları kalıcı olarak silinecektir.
+                            </div>
+                            <p><strong>Silinecek Ürün:</strong></p>
+                            <ul>
+                                <li><strong>Stok No:</strong> {{ urun.model_no }}</li>
+                                <li><strong>Seri No:</strong> {{ urun.seri_no }}</li>
+                                <li><strong>Jira No:</strong> {{ urun.jira_no }}</li>
+                            </ul>
+                            <form method="POST" action="{{ url_for('urun_sil', urun_id=urun.id) }}">
+                                <div class="mb-3">
+                                    <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input" id="silmeOnay" required>
+                                        Bu ürünü silmek istediğimi onaylıyorum
+                                    </label>
+                                </div>
+                                <button type="submit" class="btn btn-danger" id="silButonu" disabled>
+                                    <i class="fas fa-trash-alt me-2"></i>Ürünü Sil
+                                </button>
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
                             </form>
                         </div>
@@ -346,14 +399,15 @@
                         <div class="mb-3">
                             <label class="form-label">İşletme</label>
                             <select class="form-select" name="isletme" required>
-                                <option value="Ankara Bulaşık Makinesi İşletmesi" {% if urun.isletme == 'Ankara Bulaşık Makinesi İşletmesi' %}selected{% endif %}>Ankara Bulaşık Makinesi İşletmesi</option>
-                                <option value="Manisa Çamaşır Makinesi İşletmesi" {% if urun.isletme == 'Manisa Çamaşır Makinesi İşletmesi' %}selected{% endif %}>Manisa Çamaşır Makinesi İşletmesi</option>
-                                <option value="Eskişehir Buzdolabı İşletmesi" {% if urun.isletme == 'Eskişehir Buzdolabı İşletmesi' %}selected{% endif %}>Eskişehir Buzdolabı İşletmesi</option>
-                                <option value="Ankara Buzdolabı İşletmesi" {% if urun.isletme == 'Ankara Buzdolabı İşletmesi' %}selected{% endif %}>Ankara Buzdolabı İşletmesi</option>
-                                <option value="Bolu Pişirici Cihazlar İşletmesi" {% if urun.isletme == 'Bolu Pişirici Cihazlar İşletmesi' %}selected{% endif %}>Bolu Pişirici Cihazlar İşletmesi</option>
-                                <option value="Beko Wuxi R&D" {% if urun.isletme == 'Beko Wuxi R&D' %}selected{% endif %}>Beko Wuxi R&D</option>
+                                <option value="Pişirici Cihazlar İşletmesi" {% if urun.isletme == 'Pişirici Cihazlar İşletmesi' %}selected{% endif %}>Pişirici Cihazlar İşletmesi</option>
+                                <option value="Buzdolabı İşletmesi" {% if urun.isletme == 'Buzdolabı İşletmesi' %}selected{% endif %}>Buzdolabı İşletmesi</option>
                                 <option value="Temin Ürün Direktörlüğü" {% if urun.isletme == 'Temin Ürün Direktörlüğü' %}selected{% endif %}>Temin Ürün Direktörlüğü</option>
-                                <option value="Merkez Ar&Ge" {% if urun.isletme == 'Merkez Ar&Ge' %}selected{% endif %}>Merkez Ar&Ge</option>
+                                <option value="Bulaşık Makinesi İşletmesi" {% if urun.isletme == 'Bulaşık Makinesi İşletmesi' %}selected{% endif %}>Bulaşık Makinesi İşletmesi</option>
+                                <option value="Kurutucu İşletmesi" {% if urun.isletme == 'Kurutucu İşletmesi' %}selected{% endif %}>Kurutucu İşletmesi</option>
+                                <option value="Küçük Ev Aletleri İşletmesi" {% if urun.isletme == 'Küçük Ev Aletleri İşletmesi' %}selected{% endif %}>Küçük Ev Aletleri İşletmesi</option>
+                                <option value="Beko Wuxi R&D" {% if urun.isletme == 'Beko Wuxi R&D' %}selected{% endif %}>Beko Wuxi R&D</option>
+                                <option value="Hitachi" {% if urun.isletme == 'Hitachi' %}selected{% endif %}>Hitachi</option>
+                                <option value="Dawlance" {% if urun.isletme == 'Dawlance' %}selected{% endif %}>Dawlance</option>
                             </select>
                         </div>
                         {% endif %}
@@ -368,6 +422,10 @@
                         <div class="mb-3">
                             <label class="form-label">Jira No</label>
                             <input type="text" class="form-control" name="jira_no" value="{{ urun.jira_no }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Açıklama</label>
+                            <textarea class="form-control" name="aciklama" rows="2" placeholder="Açıklama yazınız...">{{ urun.aciklama if urun.aciklama else '' }}</textarea>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Durum</label>
@@ -420,8 +478,34 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Ürün Görseli</label>
+                            {% if urun.gorsel_path %}
+                            <div class="current-image mb-2">
+                                <small class="text-muted">Mevcut görsel:</small>
+                                <div class="text-center">
+                                    {% if urun.gorsel_path.startswith('https://') %}
+                                        <img src="{{ urun.gorsel_path }}" 
+                                             class="img-thumbnail" 
+                                             style="max-width: 200px; max-height: 150px;"
+                                             alt="Mevcut Görsel"
+                                             onerror="this.src='{{ url_for('static', filename='images/owl-logo.png') }}'">
+                                    {% else %}
+                                        <img src="{{ url_for('static', filename=urun.gorsel_path.replace('static/', '')) }}" 
+                                             class="img-thumbnail" 
+                                             style="max-width: 200px; max-height: 150px;"
+                                             alt="Mevcut Görsel"
+                                             onerror="this.src='{{ url_for('static', filename='images/owl-logo.png') }}'">
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
                             <input type="file" class="form-control" name="gorsel" accept="image/*">
-                            <small class="form-text text-muted">Yeni bir görsel seçmezseniz mevcut görsel korunacaktır.</small>
+                            <small class="form-text text-muted">
+                                {% if urun.gorsel_path %}
+                                    Yeni bir görsel seçerseniz mevcut görsel değiştirilecektir. Seçmezseniz mevcut görsel korunacaktır.
+                                {% else %}
+                                    Ürün için görsel seçebilirsiniz.
+                                {% endif %}
+                            </small>
                         </div>
                         <button type="submit" class="btn btn-primary">Kaydet</button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
@@ -445,6 +529,11 @@
                 "language": {
                     "url": "//cdn.datatables.net/plug-ins/1.11.3/i18n/tr.json" // Türkçe dil desteği
                 }
+            });
+            
+            // Silme onay checkbox'ı için event listener
+            $('#silmeOnay').change(function() {
+                $('#silButonu').prop('disabled', !this.checked);
             });
         });
 

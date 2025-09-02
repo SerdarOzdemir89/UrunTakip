@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "https://tobedtakip-90863126066.europe-west1.run.app/$1"
+    }
+  ]
+} 

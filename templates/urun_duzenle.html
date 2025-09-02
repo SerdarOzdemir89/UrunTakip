@@ -7,7 +7,7 @@
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Ürün Düzenle</h5>
                 </div>
-                <form action="{{ url_for('urun_duzenle', urun_id=urun.id) }}" method="post" enctype="multipart/form-data">
+                <form action="{{ url_for('urun_duzenle', product_id=urun.id) }}" method="post" enctype="multipart/form-data">
                     <div class="card-body">
                         <div class="mb-3">
                             <label for="model_no" class="form-label">Stok Numarası</label>
@@ -36,18 +36,65 @@
                         <div class="mb-3">
                             <label class="form-label">Atanacak Laboratuvarlar</label>
                             <div class="row">
-                                {% for lab in laboratuvarlar %}
-                                    {% if lab not in ['Hurda', 'Bekleme Alanında', 'Transfer Edildi', 'Laboratuvarda'] %}
-                                    <div class="col-md-6">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="laboratuvarlar" value="{{ lab }}" id="lab_{{ loop.index }}" {% if lab in urun.laboratuvarlar.split(',') %}checked{% endif %}>
-                                            <label class="form-check-label" for="lab_{{ loop.index }}">
-                                                {{ lab }}
-                                            </label>
-                                        </div>
-                                    </div>
-                                    {% endif %}
+                                {% set mevcut_laboratuvarlar = [] %}
+                                {% for lab_durum in urun.laboratuvar_durumlari %}
+                                    {% set _ = mevcut_laboratuvarlar.append(lab_durum.laboratuvar) %}
                                 {% endfor %}
+                                
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="laboratuvarlar" value="EMC" id="lab_emc" {% if "EMC" in mevcut_laboratuvarlar %}checked{% endif %}>
+                                        <label class="form-check-label" for="lab_emc">EMC</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="laboratuvarlar" value="İklimlendirme ve Titreşim" id="lab_iklim" {% if "İklimlendirme ve Titreşim" in mevcut_laboratuvarlar %}checked{% endif %}>
+                                        <label class="form-check-label" for="lab_iklim">İklimlendirme ve Titreşim</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="laboratuvarlar" value="Dokunmatik Performans" id="lab_dokunmatik" {% if "Dokunmatik Performans" in mevcut_laboratuvarlar %}checked{% endif %}>
+                                        <label class="form-check-label" for="lab_dokunmatik">Dokunmatik Performans</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="laboratuvarlar" value="Optik Performans" id="lab_optik" {% if "Optik Performans" in mevcut_laboratuvarlar %}checked{% endif %}>
+                                        <label class="form-check-label" for="lab_optik">Optik Performans</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="laboratuvarlar" value="Komponent" id="lab_komponent" {% if "Komponent" in mevcut_laboratuvarlar %}checked{% endif %}>
+                                        <label class="form-check-label" for="lab_komponent">Komponent</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="laboratuvarlar" value="Gerilim Performans" id="lab_gerilim" {% if "Gerilim Performans" in mevcut_laboratuvarlar %}checked{% endif %}>
+                                        <label class="form-check-label" for="lab_gerilim">Gerilim Performans</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="laboratuvarlar" value="Derating" id="lab_derating" {% if "Derating" in mevcut_laboratuvarlar %}checked{% endif %}>
+                                        <label class="form-check-label" for="lab_derating">Derating</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="laboratuvarlar" value="Safety" id="lab_safety" {% if "Safety" in mevcut_laboratuvarlar %}checked{% endif %}>
+                                        <label class="form-check-label" for="lab_safety">Safety</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="laboratuvarlar" value="Standby" id="lab_standby" {% if "Standby" in mevcut_laboratuvarlar %}checked{% endif %}>
+                                        <label class="form-check-label" for="lab_standby">Standby</label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="mb-3">

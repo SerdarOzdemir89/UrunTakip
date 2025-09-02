@@ -845,7 +845,7 @@ def urun_detay(product_id):
         except Exception as e:
             logger.error(f'Ürün log kayıtları getirme hatası: {str(e)}')
         
-        return render_template('urun_detay.html', urun=urun, urun_log_kayitlari=urun_log_kayitlari)
+        return render_template('urun_detay.html', urun=urun, urun_log_kayitlari=urun_log_kayitlari, isletmeler=isletmeler)
     except Exception as e:
         logger.error(f'Ürün detay hatası: {str(e)}')
         flash('Ürün detayları yüklenirken bir hata oluştu!', 'error')

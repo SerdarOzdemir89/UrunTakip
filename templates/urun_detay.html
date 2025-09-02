@@ -399,15 +399,9 @@
                         <div class="mb-3">
                             <label class="form-label">İşletme</label>
                             <select class="form-select" name="isletme" required>
-                                <option value="Pişirici Cihazlar İşletmesi" {% if urun.isletme == 'Pişirici Cihazlar İşletmesi' %}selected{% endif %}>Pişirici Cihazlar İşletmesi</option>
-                                <option value="Buzdolabı İşletmesi" {% if urun.isletme == 'Buzdolabı İşletmesi' %}selected{% endif %}>Buzdolabı İşletmesi</option>
-                                <option value="Temin Ürün Direktörlüğü" {% if urun.isletme == 'Temin Ürün Direktörlüğü' %}selected{% endif %}>Temin Ürün Direktörlüğü</option>
-                                <option value="Bulaşık Makinesi İşletmesi" {% if urun.isletme == 'Bulaşık Makinesi İşletmesi' %}selected{% endif %}>Bulaşık Makinesi İşletmesi</option>
-                                <option value="Kurutucu İşletmesi" {% if urun.isletme == 'Kurutucu İşletmesi' %}selected{% endif %}>Kurutucu İşletmesi</option>
-                                <option value="Küçük Ev Aletleri İşletmesi" {% if urun.isletme == 'Küçük Ev Aletleri İşletmesi' %}selected{% endif %}>Küçük Ev Aletleri İşletmesi</option>
-                                <option value="Beko Wuxi R&D" {% if urun.isletme == 'Beko Wuxi R&D' %}selected{% endif %}>Beko Wuxi R&D</option>
-                                <option value="Hitachi" {% if urun.isletme == 'Hitachi' %}selected{% endif %}>Hitachi</option>
-                                <option value="Dawlance" {% if urun.isletme == 'Dawlance' %}selected{% endif %}>Dawlance</option>
+                                {% for isletme_item in isletmeler %}
+                                <option value="{{ isletme_item }}" {% if urun.isletme == isletme_item %}selected{% endif %}>{{ isletme_item }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         {% endif %}

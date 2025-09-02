@@ -637,7 +637,7 @@ def index():
     
     try:
         isletme_filter = request.args.get('isletme', '')
-        model_no_filter = request.args.get('model_no', '')
+        seri_no_filter = request.args.get('seri_no', '')
         jira_no_filter = request.args.get('jira_no', '')
         lab_filter = request.args.get('lab', '')
         durum_filter = request.args.get('durum', '')
@@ -658,7 +658,7 @@ def index():
             if isletme_filter and urun.get('isletme', '') != isletme_filter:
                 continue
                 
-            if model_no_filter and model_no_filter.lower() not in urun.get('model_no', '').lower():
+            if seri_no_filter and seri_no_filter.lower() not in urun.get('seri_no', '').lower():
                 continue
                 
             if jira_no_filter and jira_no_filter.lower() not in urun.get('jira_no', '').lower():

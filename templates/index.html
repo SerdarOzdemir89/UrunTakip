@@ -594,6 +594,7 @@
                         <label class="form-label w-100"><i class="fas fa-ticket-alt" style="font-size:1em;"></i> Jira Talep Numarası</label>
                         <input type="text" class="form-control form-control-sm w-100" name="jira_no" value="{{ request.args.get('jira_no', '') }}">
                     </div>
+                    {% if session.get('role') == 'admin' or not session.get('isletme') %}
                     <div class="col-md-3 col-12 mb-2 mb-md-0">
                         <label class="form-label w-100"><i class="fas fa-industry" style="font-size:1em;"></i> İşletme</label>
                         <select class="form-control form-control-sm w-100" name="isletme">
@@ -603,6 +604,12 @@
                             {% endfor %}
                         </select>
                     </div>
+                    {% else %}
+                    <div class="col-md-3 col-12 mb-2 mb-md-0">
+                        <label class="form-label w-100"><i class="fas fa-industry" style="font-size:1em;"></i> İşletme</label>
+                        <input type="text" class="form-control form-control-sm w-100" value="{{ session.get('isletme') }}" readonly style="background-color: #e9ecef;">
+                    </div>
+                    {% endif %}
                     <div class="col-md-3 col-12 mb-2 mb-md-0">
                         <label class="form-label w-100"><i class="fas fa-flask" style="font-size:1em;"></i> Laboratuvar</label>
                         <select class="form-control form-control-sm w-100" name="lab">
@@ -814,12 +821,16 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label for="isletme" class="form-label">İşletme</label>
+                            {% if session.get('role') == 'admin' or not session.get('isletme') %}
                             <select class="form-select" id="isletme" name="isletme" required>
                                 <option value="" disabled selected>İşletme seçiniz</option>
                                 {% for isletme_item in isletmeler %}
                                 <option value="{{ isletme_item }}">{{ isletme_item }}</option>
                                 {% endfor %}
                             </select>
+                            {% else %}
+                            <input type="text" class="form-control" id="isletme" name="isletme" value="{{ session.get('isletme') }}" readonly style="background-color: #e9ecef;">
+                            {% endif %}
                         </div>
                         <div class="mb-3">
                             <label for="model_no" class="form-label">Stok Numarası</label>

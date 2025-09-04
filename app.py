@@ -559,17 +559,35 @@ def create_default_users():
             create_user('admin', 'admin123', 'admin')
             logger.debug("Admin kullanıcısı oluşturuldu")
             
-        # Test kullanıcıları artık sadece 'user' rolü ile oluşturulacak
-        test_users = [
-            ('ebi', 'ebi123', 'user', 'Eskişehir Buzdolabı İşletmesi'),
-            ('pci', 'pci123', 'user', 'Bolu Pişirici Cihazlar İşletmesi'),
-            ('itt', 'itt123', 'user', None),
-            ('gpt', 'gpt123', 'user', None),
+        # İşletme kullanıcıları - Her işletme için bir kullanıcı
+        business_users = [
+            ('pci', 'pci123', 'user', 'Pişirici Cihazlar İşletmesi'),
+            ('buzdolabi', 'buzdolabi123', 'user', 'Buzdolabı İşletmesi'),
+            ('temin', 'temin123', 'user', 'Temin Ürün Direktörlüğü'),
+            ('bmi', 'bmi123', 'user', 'Bulaşık Makinesi İşletmesi'),
+            ('cmi', 'cmi123', 'user', 'Çamaşır Makinesi İşletmesi'),
+            ('kurutucu', 'kurutucu123', 'user', 'Kurutucu İşletmesi'),
+            ('kea', 'kea123', 'user', 'Küçük Ev Aletleri İşletmesi'),
+            ('beko', 'beko123', 'user', 'Beko Wuxi R&D'),
+            ('hitachi', 'hitachi123', 'user', 'Hitachi'),
+            ('dawlance', 'dawlance123', 'user', 'Dawlance')
+        ]
+        
+        # Laboratuvar kullanıcıları - Tüm ürünleri görebilir
+        lab_users = [
             ('emc', 'emc123', 'user', None),
+            ('itt', 'itt123', 'user', None),
+            ('dokunmatik', 'dokunmatik123', 'user', None),
+            ('optik', 'optik123', 'user', None),
+            ('komponent', 'komponent123', 'user', None),
+            ('gerilim', 'gerilim123', 'user', None),
             ('derating', 'derating123', 'user', None),
             ('safety', 'safety123', 'user', None),
-            ('dokunmatik', 'dokunmatik123', 'user', None)
+            ('standby', 'standby123', 'user', None)
         ]
+        
+        # Tüm test kullanıcıları
+        test_users = business_users + lab_users
         
         for username, password, role, isletme in test_users:
             existing_user = get_user_by_username(username)
@@ -644,8 +662,17 @@ def index():
 
         tum_urunler = get_all_products()
         
+        # İşletme bazlı kullanıcı kontrolü
+        user_isletme = session.get('isletme')
+        user_role = session.get('role')
+        
         urunler = []
         for urun in tum_urunler:
+            # İşletme kullanıcıları sadece kendi işletmelerinin ürünlerini görebilir
+            if user_role != 'admin' and user_isletme:
+                if urun.get('isletme', '') != user_isletme:
+                    continue
+            
             # Durum filtresi kontrolü - eğer durum filtresi varsa ona göre göster
             if durum_filter:
                 if urun.get('durum') != durum_filter:

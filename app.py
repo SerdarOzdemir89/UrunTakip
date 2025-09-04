@@ -562,7 +562,7 @@ def create_default_users():
         # İşletme kullanıcıları - Her işletme için bir kullanıcı
         business_users = [
             ('pci', 'pci123', 'user', 'Pişirici Cihazlar İşletmesi'),
-            ('buzdolabi', 'buzdolabi123', 'user', 'Buzdolabı İşletmesi'),
+            ('ebi', 'ebi123', 'user', 'Buzdolabı İşletmesi'),
             ('temin', 'temin123', 'user', 'Temin Ürün Direktörlüğü'),
             ('bmi', 'bmi123', 'user', 'Bulaşık Makinesi İşletmesi'),
             ('cmi', 'cmi123', 'user', 'Çamaşır Makinesi İşletmesi'),

@@ -666,19 +666,12 @@ def index():
         user_isletme = session.get('isletme')
         user_role = session.get('role')
         
-        logger.debug(f"[DEBUG] Kullanıcı bilgileri: role={user_role}, isletme={user_isletme}")
-        
         urunler = []
         for urun in tum_urunler:
             # İşletme kullanıcıları sadece kendi işletmelerinin ürünlerini görebilir
             if user_role != 'admin' and user_isletme:
-                urun_isletme = urun.get('isletme', '')
-                logger.debug(f"[DEBUG] Ürün kontrolü: {urun.get('seri_no')} - Ürün işletme: '{urun_isletme}' vs Kullanıcı işletme: '{user_isletme}'")
-                if urun_isletme != user_isletme:
-                    logger.debug(f"[DEBUG] Filtrelendi: {urun.get('seri_no')} - İşletme uyuşmuyor")
+                if urun.get('isletme', '') != user_isletme:
                     continue
-                else:
-                    logger.debug(f"[DEBUG] Geçti: {urun.get('seri_no')} - İşletme uyuşuyor")
             
             # Durum filtresi kontrolü - eğer durum filtresi varsa ona göre göster
             if durum_filter:
